@@ -134,8 +134,16 @@ const filter = (gender, country_id, age_group, min_age, max_age, min_gender_prob
   return { whereClause, values };
 }
 
-const sort = () => {
+const sort = (sort_by, order) => {
+  const allowedSortFields = ['age', 'created_at', 'gender_probability'];
+  const allowedOrders = ['asc', 'desc'];
 
+  const sortBy = allowedSortFields.includes(sort_by) ? sort_by : 'created_at'; 
+  const sortOrder = allowedOrders.includes(order?.toLowerCase()) ? order.toLowerCase() : 'asc'; 
+
+  const orderBy = `ORDER BY ${sortBy} ${sortOrder}`;
+
+  return orderBy;
 }
 
 const paginate = () => {
@@ -155,5 +163,7 @@ module.exports = {
   findUserByName, 
   edgeCases, 
   getAgeGroup, 
-  filter 
+  filter,
+  sort,
+  paginate
 };
