@@ -1,29 +1,25 @@
 const { StatusCodes } = require("http-status-codes");
 const { validateName } = require("./user-data.validator");
-const { fetchGender, fetchAge, fetchCountryList, findUserByName, edgeCases, getAgeGroup } = require("./user-data.service");
+const { fetchGender, fetchAge, fetchCountryList, findUserByName, edgeCases, getAgeGroup, filter } = require("./user-data.service");
 const { uuidv7 } = require("uuidv7");
 const userData = require("./user-data.model");
+const pool = require("../startup/database");
 
 const index = async (req, res) => {
-    const { gender, country_id, age_group } = req.query;
-    let filter = {};
+    const { gender, country_id, age_group, min_age, max_age, min_gender_probability, min_country_probability } = req.query;
+    
+    const { whereClause, values } = filter(gender, country_id, age_group, min_age, max_age, min_gender_probability, min_country_probability);
 
-    if (gender) {
-        filter.gender = gender.toLowerCase();
-    }
+    const query = `
+        SELECT id, name, gender, country_id, age, age_group, gender_probability, country_probability
+        FROM profiles
+        ${whereClause}
+    `;
 
-    if (country_id) {
-        filter.country_id = country_id.toUpperCase();
-    }
+    const result = await pool.query(query, values);
+    const count = result.rows.length;
 
-    if (age_group) {
-        filter.age_group = age_group;
-    }
-
-    let users = await userData.find(filter, { id: 1, name: 1, gender: 1, country_id: 1, age: 1, age_group: 1 });
-
-    let count = users.length;
-    return res.status(StatusCodes.OK).json({ status: "success", count, data: users });
+    return res.status(StatusCodes.OK).json({ status: "success", count, data: result.rows });
 } 
 
 const storeUserData = async (req, res) => {

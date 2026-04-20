@@ -89,4 +89,71 @@ const getAgeGroup = (age) => {
   return "senior";
 };
 
-module.exports = { fetchGender, fetchAge, fetchCountryList, findUserByName, edgeCases, getAgeGroup };
+const filter = (gender, country_id, age_group, min_age, max_age, min_gender_probability, min_country_probability) => {
+  let conditions = [];
+  let values = [];
+  let paramCount = 1;
+
+  if (gender) {
+      conditions.push(`gender = $${paramCount++}`);
+      values.push(gender.toLowerCase());
+  }
+
+  if (country_id) {
+      conditions.push(`country_id = $${paramCount++}`);
+      values.push(country_id.toUpperCase());
+  }
+
+  if (age_group) {
+      conditions.push(`age_group = $${paramCount++}`);
+      values.push(age_group);
+  }
+
+  if (min_age) {
+      conditions.push(`age >= $${paramCount++}`);
+      values.push(Number(min_age));
+  }
+
+  if (max_age) {
+      conditions.push(`age <= $${paramCount++}`);
+      values.push(Number(max_age));
+  }
+
+  if (min_gender_probability) {
+      conditions.push(`gender_probability >= $${paramCount++}`);
+      values.push(Number(min_gender_probability));
+  }
+
+  if (min_country_probability) {
+      conditions.push(`country_probability >= $${paramCount++}`);
+      values.push(Number(min_country_probability));
+  }
+
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
+  return { whereClause, values };
+}
+
+const sort = () => {
+
+}
+
+const paginate = () => {
+
+}
+
+const fetchProfiles = ( req ) => {
+
+}
+
+
+
+module.exports = { 
+  fetchGender, 
+  fetchAge, 
+  fetchCountryList, 
+  findUserByName, 
+  edgeCases, 
+  getAgeGroup, 
+  filter 
+};
