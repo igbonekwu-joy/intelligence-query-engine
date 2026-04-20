@@ -3,6 +3,7 @@ const config = require("../config");
 const userData = require("./user-data.model");
 const { StatusCodes } = require("http-status-codes");
 const winston = require("winston");
+const pool = require("../startup/database");
 
 const axiosGetInstance = createAxiosInstance(
   '/'
@@ -146,12 +147,36 @@ const sort = (sort_by, order) => {
   return orderBy;
 }
 
-const paginate = () => {
+const paginate = (pageQuery, limitQuery) => {
+  const page = Math.max(1, parseInt(pageQuery) || 1);  
+  const limit = Math.min(50, Math.max(1, parseInt(limitQuery) || 10)); 
+  const offset = (page - 1) * limit;
 
+  const paginationClause = `LIMIT ${limit} OFFSET ${offset}`;
+
+  return paginationClause;
 }
 
-const fetchProfiles = ( req ) => {
+const fetchProfiles = async (req) => {
+  const { gender, country_id, age_group, min_age, max_age, min_gender_probability, min_country_probability, sort_by, order, page, limit } = req.query;
 
+  const { whereClause, values } = filter(gender, country_id, age_group, min_age, max_age, min_gender_probability, min_country_probability);
+
+  const orderBy = sort(sort_by, order);
+
+  const paginationClause = paginate(page, limit);
+
+  const query = `
+      SELECT id, name, gender, gender_probability, age, age_group, country_id, country_name, country_probability, created_at
+      FROM profiles
+      ${whereClause}
+      ${orderBy}
+      ${paginationClause}
+  `;
+
+  const result = await pool.query(query, values);
+  
+  return { page, limit, rows: result.rows };
 }
 
 
@@ -163,7 +188,5 @@ module.exports = {
   findUserByName, 
   edgeCases, 
   getAgeGroup, 
-  filter,
-  sort,
-  paginate
+  fetchProfiles
 };
