@@ -8,5 +8,6 @@ module.exports = {
     AGIFY_API_URL: process.env.AGIFY_API_URL,
     NATIONALIZE_API_URL: process.env.NATIONALIZE_API_URL,
     DB_URI: process.env.DB_URI,
-    DB_TEST_URI: process.env.DB_TEST_URI
+    DB_TEST_URI: process.env.DB_TEST_URI,
+    POSTGRES_URI: process.env.POSTGRES_URI,
 }
