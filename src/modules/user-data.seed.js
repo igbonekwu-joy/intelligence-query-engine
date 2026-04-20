@@ -1,6 +1,7 @@
 const { uuidv7 } = require("uuidv7");
 const data = require("../seed/seed_profiles.json");
 const pool = require("../startup/database");
+const winston = require("winston");
 
 const seed = async () => {
   try {
@@ -29,9 +30,9 @@ const seed = async () => {
       );
     }
 
-    console.log("✅ Seeding complete");
+    winston.info("Seeding complete");
   } catch (err) {
-    console.error("❌ Seeding failed:", err);
+    winston.error("Seeding failed:", err);
   } finally {
     await pool.end(); 
   }
