@@ -3,6 +3,7 @@ const config = require("../config");
 const userData = require("./user-data.model");
 const { StatusCodes } = require("http-status-codes");
 const winston = require("winston");
+const pool = require("../startup/database");
 
 const axiosGetInstance = createAxiosInstance(
   '/'
@@ -89,4 +90,103 @@ const getAgeGroup = (age) => {
   return "senior";
 };
 
-module.exports = { fetchGender, fetchAge, fetchCountryList, findUserByName, edgeCases, getAgeGroup };
+const filter = (gender, country_id, age_group, min_age, max_age, min_gender_probability, min_country_probability) => {
+  let conditions = [];
+  let values = [];
+  let paramCount = 1;
+
+  if (gender) {
+    conditions.push(`gender = $${paramCount++}`);
+    values.push(gender.toLowerCase());
+  }
+
+  if (country_id) {
+    conditions.push(`country_id = $${paramCount++}`);
+    values.push(country_id.toUpperCase());
+  }
+
+  if (age_group) {
+    conditions.push(`age_group = $${paramCount++}`);
+    values.push(age_group);
+  }
+
+  if (min_age) {
+    conditions.push(`age >= $${paramCount++}`);
+    values.push(Number(min_age));
+  }
+
+  if (max_age) {
+      conditions.push(`age <= $${paramCount++}`);
+      values.push(Number(max_age));
+  }
+
+  if (min_gender_probability) {
+    conditions.push(`gender_probability >= $${paramCount++}`);
+    values.push(Number(min_gender_probability));
+  }
+
+  if (min_country_probability) {
+    conditions.push(`country_probability >= $${paramCount++}`);
+    values.push(Number(min_country_probability));
+  }
+
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
+  return { whereClause, values };
+}
+
+const sort = (sort_by, order) => {
+  const allowedSortFields = ['age', 'created_at', 'gender_probability'];
+  const allowedOrders = ['asc', 'desc'];
+
+  const sortBy = allowedSortFields.includes(sort_by) ? sort_by : 'created_at'; 
+  const sortOrder = allowedOrders.includes(order?.toLowerCase()) ? order.toLowerCase() : 'asc'; 
+
+  const orderBy = `ORDER BY ${sortBy} ${sortOrder}`;
+
+  return orderBy;
+}
+
+const paginate = (pageQuery, limitQuery) => {
+  const page = Math.max(1, parseInt(pageQuery) || 1);  
+  const limit = Math.min(50, Math.max(1, parseInt(limitQuery) || 10)); 
+  const offset = (page - 1) * limit;
+
+  const paginationClause = `LIMIT ${limit} OFFSET ${offset}`;
+
+  return paginationClause;
+}
+
+const fetchProfiles = async (req) => {
+  const { gender, country_id, age_group, min_age, max_age, min_gender_probability, min_country_probability, sort_by, order, page, limit } = req.query;
+
+  const { whereClause, values } = filter(gender, country_id, age_group, min_age, max_age, min_gender_probability, min_country_probability);
+
+  const orderBy = sort(sort_by, order);
+
+  const paginationClause = paginate(page, limit);
+
+  const query = `
+      SELECT id, name, gender, gender_probability, age, age_group, country_id, country_name, country_probability, created_at
+      FROM profiles
+      ${whereClause}
+      ${orderBy}
+      ${paginationClause}
+  `;
+
+  const result = await pool.query(query, values);
+  
+  return { page, limit, rows: result.rows };
+}
+
+
+
+module.exports = { 
+  fetchGender, 
+  fetchAge, 
+  fetchCountryList, 
+  findUserByName, 
+  edgeCases, 
+  getAgeGroup, 
+  fetchProfiles
+};

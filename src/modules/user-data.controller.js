@@ -1,30 +1,23 @@
 const { StatusCodes } = require("http-status-codes");
 const { validateName } = require("./user-data.validator");
-const { fetchGender, fetchAge, fetchCountryList, findUserByName, edgeCases, getAgeGroup } = require("./user-data.service");
+const { fetchGender, fetchAge, fetchCountryList, findUserByName, edgeCases, getAgeGroup, filter, sort, paginate, fetchProfiles } = require("./user-data.service");
 const { uuidv7 } = require("uuidv7");
 const userData = require("./user-data.model");
+const pool = require("../startup/database");
 
 const index = async (req, res) => {
-    const { gender, country_id, age_group } = req.query;
-    let filter = {};
+    const { page, limit, rows: result } = await fetchProfiles(req);
+    const total = result.length;
 
-    if (gender) {
-        filter.gender = gender.toLowerCase();
-    }
-
-    if (country_id) {
-        filter.country_id = country_id.toUpperCase();
-    }
-
-    if (age_group) {
-        filter.age_group = age_group;
-    }
-
-    let users = await userData.find(filter, { id: 1, name: 1, gender: 1, country_id: 1, age: 1, age_group: 1 });
-
-    let count = users.length;
-    return res.status(StatusCodes.OK).json({ status: "success", count, data: users });
+    return res.status(StatusCodes.OK).json({ 
+        status: "success", 
+        page, 
+        limit, 
+        total, 
+        data: result 
+    });
 } 
+
 
 const storeUserData = async (req, res) => {
     const name = req.body.name;
