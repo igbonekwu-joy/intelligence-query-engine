@@ -2,6 +2,7 @@ const { uuidv7 } = require("uuidv7");
 const data = require("../seed/seed_profiles.json");
 const pool = require("../startup/database");
 const winston = require("winston");
+require("../startup/logger")();
 
 const seed = async () => {
   try {
