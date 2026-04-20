@@ -1,3 +1,4 @@
+const { uuidv7 } = require("uuidv7");
 const data = require("../seed/seed_profiles.json");
 const pool = require("../startup/database");
 
@@ -5,7 +6,7 @@ const seed = async () => {
   try {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS profiles (
-        id SERIAL PRIMARY KEY,
+        id UUID PRIMARY KEY,
         name VARCHAR(255) UNIQUE,
         gender VARCHAR(255),
         gender_probability FLOAT,
@@ -21,10 +22,10 @@ const seed = async () => {
 
     for (const profile of data.profiles) {
       await pool.query(
-        `INSERT INTO profiles (name, gender, gender_probability, age, age_group, country_id, country_name, country_probability) 
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        `INSERT INTO profiles (id, name, gender, gender_probability, age, age_group, country_id, country_name, country_probability) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
          ON CONFLICT (name) DO NOTHING`, // prevents duplicate errors on re-run
-        [profile.name, profile.gender, profile.gender_probability, profile.age, profile.age_group, profile.country_id, profile.country_name, profile.country_probability]
+        [uuidv7(), profile.name, profile.gender, profile.gender_probability, profile.age, profile.age_group, profile.country_id, profile.country_name, profile.country_probability]
       );
     }
 
