@@ -179,8 +179,6 @@ const fetchProfiles = async (req) => {
   return { page, limit, rows: result.rows };
 }
 
-
-
 module.exports = { 
   fetchGender, 
   fetchAge, 
