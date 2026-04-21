@@ -185,7 +185,7 @@ const storeUserData = async (req, res) => {
             (id, name, gender, gender_probability, sample_size, age, age_group, country_id, country_probability) 
         VALUES
             ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-        RETURNING *`,
+        RETURNING id, name, gender, gender_probability, sample_size, age, age_group, country_id, country_probability, created_at AT TIME ZONE 'UTC' AS created_at`,
         [
             id, 
             name, 
@@ -207,21 +207,20 @@ const storeUserData = async (req, res) => {
 const fetchUserData = async (req, res) => {
     const id = req.params.id;
     
-    const user = await userData.findOne({ id });
-
-    if (!user) {
+    const user = await pool.query(`SELECT * FROM profiles WHERE id = $1`, [id]);
+    if (user.rows.length === 0) {
         return res.status(StatusCodes.NOT_FOUND).json({ status: "error", message: "User not found" });
     }
 
-    return res.status(StatusCodes.OK).json({ status: "success", data: user });
+    return res.status(StatusCodes.OK).json({ status: "success", data: user.rows[0] });
 }
 
 const deleteUserData = async (req, res) => {
     const id = req.params.id;
 
-    const user = await userData.findOneAndDelete({ id });
+    const user = await pool.query(`DELETE FROM profiles WHERE id = $1 RETURNING *`, [id]);
 
-    if (!user) {
+    if (user.rows.length === 0) {
         return res.status(StatusCodes.NOT_FOUND).json({ status: "error", message: "User not found" });
     }
 
