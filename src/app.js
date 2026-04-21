@@ -13,7 +13,8 @@ const PORT = config.PORT;
 
 app.use(cors({
   origin: '*',
-  methods: ['GET']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 app.use(helmet({
