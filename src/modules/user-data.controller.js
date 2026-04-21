@@ -180,19 +180,26 @@ const storeUserData = async (req, res) => {
     );
     const id = uuidv7();
 
-    const data = { 
-        id, 
-        name, 
-        gender, 
-        gender_probability, 
-        sample_size, 
-        age, 
-        age_group, 
-        country_id: topCountry.country_id, 
-        country_probability: topCountry.probability.toFixed(2) 
-    };
-    let user = new userData(data);
-    user = await user.save();
+    const result = await pool.query(
+        `INSERT INTO profiles 
+            (id, name, gender, gender_probability, sample_size, age, age_group, country_id, country_probability) 
+        VALUES
+            ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        RETURNING *`,
+        [
+            id, 
+            name, 
+            gender, 
+            gender_probability, 
+            sample_size,  
+            age, 
+            age_group, 
+            topCountry.country_id, 
+            topCountry.probability.toFixed(2) 
+        ]
+    );
+
+    const user = result.rows[0];
 
     return res.status(StatusCodes.CREATED).json({ status: "success", data: user });
 }

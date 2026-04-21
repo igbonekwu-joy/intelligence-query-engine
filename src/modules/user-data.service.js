@@ -61,9 +61,8 @@ const fetchCountryList = async (name) => {
 }
 
 const findUserByName = async (name) => {
-  return await userData.findOne({
-    name: { $regex: new RegExp(`^${name}$`, "i") }
-  });
+  const result = await pool.query(`SELECT * FROM profiles WHERE LOWER(name) = LOWER($1)`, [name]);
+  return result.rows[0];
 }
 
 const edgeCases = (gender, age, countries, sample_size) => {
