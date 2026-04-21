@@ -12,6 +12,7 @@ const seed = async () => {
         name VARCHAR(255) UNIQUE,
         gender VARCHAR(255),
         gender_probability FLOAT,
+        sample_size INT,
         age INT,
         age_group VARCHAR(255),
         country_id VARCHAR(255),
@@ -30,7 +31,7 @@ const seed = async () => {
         [uuidv7(), profile.name, profile.gender, profile.gender_probability, profile.age, profile.age_group, profile.country_id, profile.country_name, profile.country_probability]
       );
     }
-
+ 
     winston.info("Seeding complete");
   } catch (err) {
     winston.error("Seeding failed:", err);
