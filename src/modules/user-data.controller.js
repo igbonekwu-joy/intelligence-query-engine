@@ -11,10 +11,14 @@ const index = async (req, res) => {
     const { page, limit, rows: result } = await fetchProfiles(req);
     const total = result.length;
 
+    if (total === 0) {
+        return res.status(StatusCodes.NOT_FOUND).json({ status: "error", message: "No profiles found" });
+    }
+
     return res.status(StatusCodes.OK).json({ 
         status: "success", 
-        page, 
-        limit, 
+        page: page ?? 1, 
+        limit: limit ?? 10, 
         total, 
         data: result 
     });
