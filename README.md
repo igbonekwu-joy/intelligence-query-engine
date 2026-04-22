@@ -45,6 +45,10 @@ cp .env.example .env
 npm run seed
 
 # 5. Start the server
+# Development
+npm run dev
+
+#Production 
 npm start
 ```
 
