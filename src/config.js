@@ -10,4 +10,5 @@ module.exports = {
     DB_URI: process.env.DB_URI,
     DB_TEST_URI: process.env.DB_TEST_URI,
     POSTGRES_URI: process.env.POSTGRES_URI,
+    POSTGRES_TEST_URI: process.env.POSTGRES_TEST_URI
 }
