@@ -2,7 +2,6 @@ const { StatusCodes } = require("http-status-codes");
 const { validateName } = require("./user-data.validator");
 const { fetchGender, fetchAge, fetchCountryList, findUserByName, edgeCases, getAgeGroup, filter, sort, paginate, fetchProfiles } = require("./user-data.service");
 const { uuidv7 } = require("uuidv7");
-const userData = require("./user-data.model");
 const pool = require("../startup/database");
 const winston = require("winston");
 const { parseNaturalQuery } = require("../utils/queryParser");
