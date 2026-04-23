@@ -6,6 +6,8 @@ require("../startup/logger")();
 
 const seed = async () => {
   try {
+    winston.info("Starting seeding process...");
+    
     await pool.query(`
       CREATE TABLE IF NOT EXISTS profiles (
         id UUID PRIMARY KEY,
