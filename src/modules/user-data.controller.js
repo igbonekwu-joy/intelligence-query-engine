@@ -30,119 +30,111 @@ const index = async (req, res) => {
 const search = async (req, res) => {
     const VALID_QUERY_PARAMS = ['q', 'page', 'limit'];
     
-    try {
-        const { q, page: pageQuery, limit: limitQuery } = req.query;
+    const { q, page: pageQuery, limit: limitQuery } = req.query;
 
-        // check for invalid query parameters
-        const invalidParams = Object.keys(req.query).filter(k => !VALID_QUERY_PARAMS.includes(k));
-        if (invalidParams.length > 0) {
-            return res.status(StatusCodes.BAD_REQUEST).json({
-                status: 'error',
-                message: 'Invalid query parameters'
-            });
-        }
-
-        // missing or empty q
-        if (!q || q.trim() === '') {
-            return res.status(StatusCodes.BAD_REQUEST).json({
-                status: 'error',
-                message: 'Invalid query parameters'
-            });
-        }
-
-        // invalid page/limit types
-        if ((pageQuery && isNaN(pageQuery)) || (limitQuery && isNaN(limitQuery))) {
-            return res.status(StatusCodes.UNPROCESSABLE_ENTITY).json({
-                status: 'error',
-                message: 'Invalid query parameters'
-            });
-        }
-
-        // parse natural language query
-        const filters = parseNaturalQuery(q);
-
-        if (!filters) {
-            return res.status(StatusCodes.UNPROCESSABLE_ENTITY).json({
-                status: 'error',
-                message: 'Unable to interpret query'
-            });
-        }
-
-        // pagination
-        const page = Math.max(1, parseInt(pageQuery) || 1);
-        const limit = Math.min(50, Math.max(1, parseInt(limitQuery) || 10));
-        const offset = (page - 1) * limit;
-
-        // build parameterized query
-        let conditions = [];
-        let values = [];
-        let paramCount = 1;
-
-        if (filters.gender) {
-            conditions.push(`gender = $${paramCount++}`);
-            values.push(filters.gender);
-        }
-
-        if (filters.age_group) {
-            conditions.push(`age_group = $${paramCount++}`);
-            values.push(filters.age_group);
-        }
-
-        if (filters.country_id) {
-            conditions.push(`country_id = $${paramCount++}`);
-            values.push(filters.country_id);
-        }
-
-        if (filters.min_age !== undefined) {
-            conditions.push(`age >= $${paramCount++}`);
-            values.push(filters.min_age);
-        }
-
-        if (filters.max_age !== undefined) {
-            conditions.push(`age <= $${paramCount++}`);
-            values.push(filters.max_age);
-        }
-
-        const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
-
-        // get total count (reuse same values array)
-        const countQuery = `SELECT COUNT(*) FROM profiles ${whereClause}`;
-        const countResult = await pool.query(countQuery, values);
-        const totalItems = parseInt(countResult.rows[0].count);
-
-        // 404 - no profiles found
-        if (totalItems === 0) {
-            return res.status(StatusCodes.NOT_FOUND).json({
-                status: 'error',
-                message: 'No profiles found matching your query'
-            });
-        }
-
-        const query = `
-            SELECT id, name, gender, gender_probability, age, age_group, country_id, country_name, country_probability, created_at AT TIME ZONE 'UTC' AS created_at
-            FROM profiles
-            ${whereClause}
-            ORDER BY created_at DESC
-            LIMIT ${limit} OFFSET ${offset}
-        `;
-
-        const result = await pool.query(query, values);
-
-        return res.status(StatusCodes.OK).json({
-            status: 'success',
-            page,
-            limit,
-            total: totalItems,
-            data: result.rows
-        });
-
-    } catch (err) {
-        winston.error(err.message, err);
-        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+    // check for invalid query parameters
+    const invalidParams = Object.keys(req.query).filter(k => !VALID_QUERY_PARAMS.includes(k));
+    if (invalidParams.length > 0) {
+        return res.status(StatusCodes.BAD_REQUEST).json({
             status: 'error',
-            message: 'Internal server error'
+            message: 'Invalid query parameters'
         });
     }
+
+    // missing or empty q
+    if (!q || q.trim() === '') {
+        return res.status(StatusCodes.BAD_REQUEST).json({
+            status: 'error',
+            message: 'Invalid query parameters'
+        });
+    }
+
+    // invalid page/limit types
+    if ((pageQuery && isNaN(pageQuery)) || (limitQuery && isNaN(limitQuery))) {
+        return res.status(StatusCodes.UNPROCESSABLE_ENTITY).json({
+            status: 'error',
+            message: 'Invalid query parameters'
+        });
+    }
+
+    // parse natural language query
+    const filters = parseNaturalQuery(q);
+
+    if (!filters) {
+        return res.status(StatusCodes.UNPROCESSABLE_ENTITY).json({
+            status: 'error',
+            message: 'Unable to interpret query'
+        });
+    }
+
+    // pagination
+    const page = Math.max(1, parseInt(pageQuery) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(limitQuery) || 10));
+    const offset = (page - 1) * limit;
+
+    // build parameterized query
+    let conditions = [];
+    let values = [];
+    let paramCount = 1;
+
+    if (filters.gender) {
+        conditions.push(`gender = $${paramCount++}`);
+        values.push(filters.gender);
+    }
+
+    if (filters.age_group) {
+        conditions.push(`age_group = $${paramCount++}`);
+        values.push(filters.age_group);
+    }
+
+    if (filters.country_id) {
+        conditions.push(`country_id = $${paramCount++}`);
+        values.push(filters.country_id);
+    }
+
+    if (filters.min_age !== undefined) {
+        conditions.push(`age >= $${paramCount++}`);
+        values.push(filters.min_age);
+    }
+
+    if (filters.max_age !== undefined) {
+        conditions.push(`age <= $${paramCount++}`);
+        values.push(filters.max_age);
+    }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
+    // get total count (reuse same values array)
+    const countQuery = `SELECT COUNT(*) FROM profiles ${whereClause}`;
+    const countResult = await pool.query(countQuery, values);
+    const totalItems = parseInt(countResult.rows[0].count);
+
+    // 404 - no profiles found
+    if (totalItems === 0) {
+        return res.status(StatusCodes.NOT_FOUND).json({
+            status: 'error',
+            message: 'No profiles found matching your query'
+        });
+    }
+
+    const query = `
+        SELECT id, name, gender, gender_probability, age, age_group, country_id, country_name, country_probability, created_at AT TIME ZONE 'UTC' AS created_at
+        FROM profiles
+        ${whereClause}
+        ORDER BY created_at DESC
+        LIMIT ${limit} OFFSET ${offset}
+    `;
+
+    const result = await pool.query(query, values);
+
+    return res.status(StatusCodes.OK).json({
+        status: 'success',
+        page,
+        limit,
+        total: totalItems,
+        data: result.rows
+    });
+
 }
 
 const storeUserData = async (req, res) => {
