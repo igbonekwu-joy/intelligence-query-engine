@@ -1,5 +1,5 @@
 const { StatusCodes } = require("http-status-codes");
-const { validateName } = require("./user-data.validator");
+const { validateName, validateQueryParams } = require("./user-data.validator");
 const { fetchGender, fetchAge, fetchCountryList, findUserByName, edgeCases, getAgeGroup, filter, sort, paginate, fetchProfiles } = require("./user-data.service");
 const { uuidv7 } = require("uuidv7");
 const pool = require("../startup/database");
@@ -7,6 +7,11 @@ const winston = require("winston");
 const { parseNaturalQuery } = require("../utils/queryParser");
 
 const index = async (req, res) => {
+    const { error } = validateQueryParams.validate(req.query);
+    if (error) {
+        return res.status(StatusCodes.BAD_REQUEST).json({ status: "error", message: "Invalid query parameters" });
+    }
+
     const { page, limit, total, rows: result } = await fetchProfiles(req);
 
     if (total === 0) {
@@ -41,7 +46,7 @@ const search = async (req, res) => {
         if (!q || q.trim() === '') {
             return res.status(StatusCodes.BAD_REQUEST).json({
                 status: 'error',
-                message: 'Missing or empty parameter: q is required'
+                message: 'Invalid query parameters'
             });
         }
 
@@ -49,7 +54,7 @@ const search = async (req, res) => {
         if ((pageQuery && isNaN(pageQuery)) || (limitQuery && isNaN(limitQuery))) {
             return res.status(StatusCodes.UNPROCESSABLE_ENTITY).json({
                 status: 'error',
-                message: 'Invalid parameter type: page and limit must be numbers'
+                message: 'Invalid query parameters'
             });
         }
 
@@ -113,8 +118,6 @@ const search = async (req, res) => {
             });
         }
 
-        const totalPages = Math.ceil(totalItems / limit);
-
         const query = `
             SELECT id, name, gender, gender_probability, age, age_group, country_id, country_name, country_probability, created_at AT TIME ZONE 'UTC' AS created_at
             FROM profiles
@@ -129,7 +132,7 @@ const search = async (req, res) => {
             status: 'success',
             page,
             limit,
-            total: result.rows.length,
+            total: totalItems,
             data: result.rows
         });
 
