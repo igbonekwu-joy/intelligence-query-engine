@@ -1,6 +1,5 @@
 const { createAxiosInstance } = require("../utils/axios");
 const config = require("../config");
-const userData = require("./user-data.model");
 const { StatusCodes } = require("http-status-codes");
 const winston = require("winston");
 const pool = require("../startup/database");
