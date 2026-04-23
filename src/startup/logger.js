@@ -12,5 +12,8 @@ module.exports = function () {
     }); 
 
     winston.add(new winston.transports.Console());
-    winston.add(new winston.transports.File({ filename: 'logfile.log' })); 
+
+    if(process.env.NODE_ENV !== 'production') {
+        winston.add(new winston.transports.File({ filename: 'logfile.log' })); 
+    }
 }
