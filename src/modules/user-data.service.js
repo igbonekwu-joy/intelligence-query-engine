@@ -152,7 +152,7 @@ const paginate = (pageQuery, limitQuery) => {
 
   const paginationClause = `LIMIT ${limit} OFFSET ${offset}`;
 
-  return paginationClause;
+  return { page, limit, offset, paginationClause };
 }
 
 const fetchProfiles = async (req) => {
@@ -162,7 +162,7 @@ const fetchProfiles = async (req) => {
 
   const orderBy = sort(sort_by, order);
 
-  const paginationClause = paginate(page, limit);
+  const { page: pageEntered, limit: limitEntered, offset, paginationClause } = paginate(page, limit);
 
   const [result, countResult] = await Promise.all([
     pool.query(
@@ -181,7 +181,7 @@ const fetchProfiles = async (req) => {
 
   const total = parseInt(countResult.rows[0].count, 10);
   
-  return { page, limit, total, rows: result.rows };
+  return { page: pageEntered, limit: limitEntered, total, rows: result.rows };
 }
 
 module.exports = { 

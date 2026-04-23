@@ -20,8 +20,8 @@ const index = async (req, res) => {
 
     return res.status(StatusCodes.OK).json({ 
         status: "success", 
-        page: page ?? 1, 
-        limit: limit ?? 10, 
+        page: page, 
+        limit: limit, 
         total, 
         data: result 
     });
