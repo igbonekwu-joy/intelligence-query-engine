@@ -15,7 +15,7 @@ const seed = async () => {
         sample_size INT,
         age INT,
         age_group VARCHAR(255),
-        country_id VARCHAR(255),
+        country_id VARCHAR(2),
         country_name VARCHAR(255),
         country_probability FLOAT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

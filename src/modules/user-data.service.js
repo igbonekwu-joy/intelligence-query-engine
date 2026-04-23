@@ -105,7 +105,7 @@ const filter = (gender, country_id, age_group, min_age, max_age, min_gender_prob
 
   if (age_group) {
     conditions.push(`age_group = $${paramCount++}`);
-    values.push(age_group);
+    values.push(age_group.toLowerCase());
   }
 
   if (min_age) {
@@ -164,17 +164,24 @@ const fetchProfiles = async (req) => {
 
   const paginationClause = paginate(page, limit);
 
-  const query = `
-      SELECT id, name, gender, gender_probability, age, age_group, country_id, country_name, country_probability, created_at
-      FROM profiles
-      ${whereClause}
-      ${orderBy}
-      ${paginationClause}
-  `;
+  const [result, countResult] = await Promise.all([
+    pool.query(
+      `SELECT id, name, gender, gender_probability, age, age_group, country_id, country_name, country_probability, created_at
+       FROM profiles
+       ${whereClause}
+       ${orderBy}
+       ${paginationClause}`,
+      values
+    ),
+    pool.query(
+      `SELECT COUNT(*) FROM profiles ${whereClause}`,
+      values  
+    )
+  ]);
 
-  const result = await pool.query(query, values);
+  const total = parseInt(countResult.rows[0].count, 10);
   
-  return { page, limit, rows: result.rows };
+  return { page, limit, total, rows: result.rows };
 }
 
 module.exports = { 

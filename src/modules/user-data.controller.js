@@ -7,8 +7,7 @@ const winston = require("winston");
 const { parseNaturalQuery } = require("../utils/queryParser");
 
 const index = async (req, res) => {
-    const { page, limit, rows: result } = await fetchProfiles(req);
-    const total = result.length;
+    const { page, limit, total, rows: result } = await fetchProfiles(req);
 
     if (total === 0) {
         return res.status(StatusCodes.NOT_FOUND).json({ status: "error", message: "No profiles found" });
