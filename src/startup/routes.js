@@ -8,6 +8,6 @@ module.exports = function (app) {
 
     app.use(rateLimitHandler);
 
-    app.use('/', userData);
-    app.use('/auth', userData); 
+    app.use('/api/auth', userData); 
+    app.use('/api/profiles', userData);
 }
