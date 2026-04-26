@@ -31,6 +31,18 @@ const gitHubCallback = async (req, res) => {
     if (!code || !verifier) {
         return res.status(StatusCodes.BAD_REQUEST).json({ status: "error", message: "Missing code or verifier" });
     }
+
+    const tokenResponse = await axios.post(
+        'https://github.com/login/oauth/access_token',
+        {
+            client_id: process.env.GITHUB_CLIENT_ID,
+            client_secret: process.env.GITHUB_CLIENT_SECRET,
+            code,
+            redirect_uri: process.env.GITHUB_CALLBACK_URL,
+            code_verifier: verifier,
+        },
+        { headers: { Accept: 'application/json' } }
+    );
 }
 
 module.exports = {

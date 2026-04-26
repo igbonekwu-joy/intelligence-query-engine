@@ -1,10 +1,10 @@
 const express = require('express');
-const { gitHubOAuth } = require('./auth.controller');
+const { gitHubOAuth, gitHubCallback } = require('./auth.controller');
 const router = express.Router();
 
 router.get('/github', gitHubOAuth);
 
-router.get('/github/callback', (req, res) => {});
+router.get('/github/callback', gitHubCallback);
 
 router.post('/refresh', (req, res) => {});
 
