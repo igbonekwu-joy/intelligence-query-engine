@@ -1,5 +1,6 @@
 const { StatusCodes } = require("http-status-codes");
 const config = require("../config");
+const jwt = require("jsonwebtoken");
 
 const authenticate = (req, res, next) => {
     const header = req.headers.authorization;
@@ -15,6 +16,7 @@ const authenticate = (req, res, next) => {
     const token = header.split(' ')[1];
     try{
         const decoded = jwt.verify(token, config.JWT_SECRET);
+        console.log(decoded)
         req.user = decoded;
 
         if (!req.user.is_active) {
@@ -28,7 +30,7 @@ const authenticate = (req, res, next) => {
             return res.status(StatusCodes.UNAUTHORIZED).json({ status: "error", message: "Access token has expired" });
         }
         
-        return res.status(StatusCodes.UNAUTHORIZED).json({ status: "error", message: "Invalid or expired access token" });
+        return res.status(StatusCodes.UNAUTHORIZED).json({ status: "error", message: "Invalid access token" });
     }
 }
 
