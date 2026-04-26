@@ -2,7 +2,7 @@ const { StatusCodes } = require("http-status-codes");
 const config = require("../../config");
 const { generateCodeVerifier, generateCodeChallenge } = require("../../utils/pkce");
 const { getGitHubAccessToken, getGitHubUserProfile, getGitHubUserEmail, getOrCreateUser } = require("./auth.service");
-const { generateAccessToken, generateRefreshToken } = require("../../utils/tokens");
+const { generateAccessToken, generateRefreshToken, regenerateRefreshToken } = require("../../utils/tokens");
 
 const gitHubOAuth = async (req, res) => {
     const verifier = generateCodeVerifier();
@@ -19,7 +19,7 @@ const gitHubOAuth = async (req, res) => {
         code_challenge_method: "S256"
     });
 
-    res.redirect(`https://github.com/login/oauth/authorize?${params.toString()}`);
+    res.redirect(`${config.GITHUB_LOGIN_REDIRECT_URL}?${params.toString()}`);
 }
 
 const gitHubCallback = async (req, res) => {
@@ -55,7 +55,22 @@ const gitHubCallback = async (req, res) => {
     return res.status(StatusCodes.OK).json({ status: "success", access_token: accessToken, refresh_token: refreshToken });
 }
 
+const refresh = async (req, res) => {
+    const { refresh_token } = req.body;
+    if (!refresh_token) {
+        return res.status(StatusCodes.BAD_REQUEST).json({ status: "error", message: "Missing refresh token" });
+    }
+
+    const result = await regenerateRefreshToken(refresh_token);
+    if (!result) {
+        return res.status(StatusCodes.UNAUTHORIZED).json({ status: "error", message: "Invalid or expired refresh token" });
+    }
+
+    return res.status(StatusCodes.OK).json({ status: "success", access_token: result.accessToken, refresh_token: result.refreshToken });
+}
+
 module.exports = {
     gitHubOAuth,
-    gitHubCallback
+    gitHubCallback,
+    refresh
 }
