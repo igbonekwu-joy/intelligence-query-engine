@@ -1,5 +1,5 @@
 const { StatusCodes } = require("http-status-codes");
-const { validateName, validateQueryParams } = require("./user-data.validator");
+const { validateName, validateQueryParams, validateSearchQueryParams } = require("./user-data.validator");
 const { fetchGender, fetchAge, fetchCountryList, findUserByName, edgeCases, getAgeGroup, filter, sort, paginate, fetchProfiles } = require("./user-data.service");
 const { uuidv7 } = require("uuidv7");
 const pool = require("../../startup/database");
@@ -39,33 +39,11 @@ const index = async (req, res) => {
 } 
 
 const search = async (req, res) => {
-    const VALID_QUERY_PARAMS = ['q', 'page', 'limit'];
-    
     const { q, page: pageQuery, limit: limitQuery } = req.query;
 
-    // check for invalid query parameters
-    const invalidParams = Object.keys(req.query).filter(k => !VALID_QUERY_PARAMS.includes(k));
-    if (invalidParams.length > 0) {
-        return res.status(StatusCodes.BAD_REQUEST).json({
-            status: 'error',
-            message: 'Invalid query parameters'
-        });
-    }
-
-    // missing or empty q
-    if (!q || q.trim() === '') {
-        return res.status(StatusCodes.BAD_REQUEST).json({
-            status: 'error',
-            message: 'Invalid query parameters'
-        });
-    }
-
-    // invalid page/limit types
-    if ((pageQuery && isNaN(pageQuery)) || (limitQuery && isNaN(limitQuery))) {
-        return res.status(StatusCodes.UNPROCESSABLE_ENTITY).json({
-            status: 'error',
-            message: 'Invalid query parameters'
-        });
+    const { error } = validateSearchQueryParams.validate(req.query);
+    if (error) {
+        return res.status(StatusCodes.BAD_REQUEST).json({ status: "error", message: "Invalid query parameters" });
     }
 
     // parse natural language query
@@ -138,9 +116,9 @@ const search = async (req, res) => {
 
     const result = await pool.query(query, values);
     const total_pages = Math.ceil(totalItems / limit);
-    const self = `${req.baseUrl}?q=${encodeURIComponent(q)}&page=${page}&limit=${limit}`;
-    const next = page * limit < totalItems ? `${req.baseUrl}?q=${encodeURIComponent(q)}&page=${page + 1}&limit=${limit}` : null;
-    const prev = page > 1 ? `${req.baseUrl}?q=${encodeURIComponent(q)}&page=${page - 1}&limit=${limit}` : null;
+    const self = `${req.baseUrl + req.path}?q=${encodeURIComponent(q)}&page=${page}&limit=${limit}`;
+    const next = page * limit < totalItems ? `${req.baseUrl + req.path}?q=${encodeURIComponent(q)}&page=${page + 1}&limit=${limit}` : null;
+    const prev = page > 1 ? `${req.baseUrl + req.path}?q=${encodeURIComponent(q)}&page=${page - 1}&limit=${limit}` : null;
 
     return res.status(StatusCodes.OK).json({
         status: 'success',
