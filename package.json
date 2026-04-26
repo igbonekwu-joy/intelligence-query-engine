@@ -7,7 +7,7 @@
     "start": "node src/app.js",
     "dev": "nodemon app.js",
     "seed": "node src/modules/profile/user-data.seed.js",
-    "migrate": "node src/migrations/users.migration.js"
+    "migrate": "node src/migrations/users.migration.js && node src/migrations/tokens.migration.js"
   },
   "keywords": [],
   "author": "",
