@@ -75,9 +75,25 @@ const getOrCreateUser = async (profile, email) => {
     return user;
 }
 
+const deleteRefreshToken = async (refreshToken) => {
+    const result = await pool.query(
+        `SELECT * FROM refresh_tokens WHERE token = $1`,
+        [refreshToken]
+    );
+    if (result.rows.length === 0) return false;
+
+    await pool.query(
+        `DELETE FROM refresh_tokens WHERE token = $1`,
+        [refreshToken]
+    );
+
+    return true;
+}
+
 module.exports = {
     getGitHubAccessToken,
     getGitHubUserProfile,
     getGitHubUserEmail,
-    getOrCreateUser
+    getOrCreateUser,
+    deleteRefreshToken
 }
