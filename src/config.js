@@ -7,8 +7,10 @@ module.exports = {
     GENDERIZE_API_URL: process.env.GENDERIZE_API_URL,
     AGIFY_API_URL: process.env.AGIFY_API_URL,
     NATIONALIZE_API_URL: process.env.NATIONALIZE_API_URL,
-    DB_URI: process.env.DB_URI,
-    DB_TEST_URI: process.env.DB_TEST_URI,
     POSTGRES_URI: process.env.POSTGRES_URI,
-    POSTGRES_TEST_URI: process.env.POSTGRES_TEST_URI
+    POSTGRES_TEST_URI: process.env.POSTGRES_TEST_URI,
+    GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID,
+    GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET,
+    GITHUB_REDIRECT_URI: process.env.GITHUB_CALLBACK_URL,
+    SESSION_SECRET: process.env.SESSION_SECRET
 }
