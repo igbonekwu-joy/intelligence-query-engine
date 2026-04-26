@@ -68,17 +68,17 @@ const search = async (req, res) => {
 
     if (filters.gender) {
         conditions.push(`gender = $${paramCount++}`);
-        values.push(filters.gender);
+        values.push(filters.gender.toLowerCase());
     }
 
     if (filters.age_group) {
         conditions.push(`age_group = $${paramCount++}`);
-        values.push(filters.age_group);
+        values.push(filters.age_group.toLowerCase());
     }
 
     if (filters.country_id) {
         conditions.push(`country_id = $${paramCount++}`);
-        values.push(filters.country_id);
+        values.push(filters.country_id.toUpperCase());
     }
 
     if (filters.min_age !== undefined) {
@@ -93,12 +93,19 @@ const search = async (req, res) => {
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
-    // get total count (reuse same values array)
-    const countQuery = `SELECT COUNT(*) FROM profiles ${whereClause}`;
-    const countResult = await pool.query(countQuery, values);
-    const totalItems = parseInt(countResult.rows[0].count);
+    const [countResult, result] = await Promise.all([
+        pool.query(`SELECT COUNT(*) FROM profiles ${whereClause}`, values),
+        pool.query(
+            `SELECT id, name, gender, gender_probability, age, age_group, country_id, country_name, country_probability, created_at AT TIME ZONE 'UTC' AS created_at
+            FROM profiles
+            ${whereClause}
+            ORDER BY created_at DESC
+            LIMIT ${limit} OFFSET ${offset}`,
+            values
+        )
+    ]);
 
-    // 404 - no profiles found
+    const totalItems = parseInt(countResult.rows[0].count);
     if (totalItems === 0) {
         return res.status(StatusCodes.NOT_FOUND).json({
             status: 'error',
@@ -106,15 +113,6 @@ const search = async (req, res) => {
         });
     }
 
-    const query = `
-        SELECT id, name, gender, gender_probability, age, age_group, country_id, country_name, country_probability, created_at AT TIME ZONE 'UTC' AS created_at
-        FROM profiles
-        ${whereClause}
-        ORDER BY created_at DESC
-        LIMIT ${limit} OFFSET ${offset}
-    `;
-
-    const result = await pool.query(query, values);
     const total_pages = Math.ceil(totalItems / limit);
     const self = `${req.baseUrl + req.path}?q=${encodeURIComponent(q)}&page=${page}&limit=${limit}`;
     const next = page * limit < totalItems ? `${req.baseUrl + req.path}?q=${encodeURIComponent(q)}&page=${page + 1}&limit=${limit}` : null;
