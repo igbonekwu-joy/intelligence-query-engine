@@ -17,6 +17,11 @@ const generateRefreshToken = async (userId) => {
     const expires = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
 
     await pool.query(
+        `DELETE FROM refresh_tokens WHERE user_id = $1`,
+        [userId]
+    );
+
+    await pool.query(
         `INSERT INTO refresh_tokens (id, user_id, token, expires_at) VALUES ($1, $2, $3, $4)`,
         [uuidv7(), userId, token, expires]
     );

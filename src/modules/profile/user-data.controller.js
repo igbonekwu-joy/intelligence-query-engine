@@ -18,11 +18,22 @@ const index = async (req, res) => {
         return res.status(StatusCodes.NOT_FOUND).json({ status: "error", message: "No profiles found" });
     }
 
+    const totalPages = Math.ceil(total / limit);
+    const self = `${req.baseUrl}?page=${page}&limit=${limit}`;
+    const next = page * limit < total ? `${req.baseUrl}?page=${page + 1}&limit=${limit}` : null;
+    const prev = page > 1 ? `${req.baseUrl}?page=${page - 1}&limit=${limit}` : null;
+
     return res.status(StatusCodes.OK).json({ 
         status: "success", 
         page: page, 
         limit: limit, 
         total, 
+        total_pages: totalPages,
+        links: {
+            self,
+            next,
+            prev
+        },
         data: result 
     });
 } 
@@ -126,12 +137,22 @@ const search = async (req, res) => {
     `;
 
     const result = await pool.query(query, values);
+    const total_pages = Math.ceil(totalItems / limit);
+    const self = `${req.baseUrl}?q=${encodeURIComponent(q)}&page=${page}&limit=${limit}`;
+    const next = page * limit < totalItems ? `${req.baseUrl}?q=${encodeURIComponent(q)}&page=${page + 1}&limit=${limit}` : null;
+    const prev = page > 1 ? `${req.baseUrl}?q=${encodeURIComponent(q)}&page=${page - 1}&limit=${limit}` : null;
 
     return res.status(StatusCodes.OK).json({
         status: 'success',
         page,
         limit,
         total: totalItems,
+        total_pages,
+        links: {
+            self,
+            next,
+            prev
+        },
         data: result.rows
     });
 

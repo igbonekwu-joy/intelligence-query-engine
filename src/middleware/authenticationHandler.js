@@ -16,7 +16,6 @@ const authenticate = (req, res, next) => {
     const token = header.split(' ')[1];
     try{
         const decoded = jwt.verify(token, config.JWT_SECRET);
-        console.log(decoded)
         req.user = decoded;
 
         if (!req.user.is_active) {
