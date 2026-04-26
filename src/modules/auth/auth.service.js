@@ -1,4 +1,4 @@
-const { createAxiosInstance } = require("../../utils/axios");
+const { createAxiosInstance } = require("../profile/service/axios");
 
 const axiosAuthInstance = createAxiosInstance(
   '/'
