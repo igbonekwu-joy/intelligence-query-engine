@@ -1,7 +1,7 @@
 const { StatusCodes } = require("http-status-codes");
 const config = require("../../config");
 const { generateCodeVerifier, generateCodeChallenge } = require("../../utils/pkce");
-const { getGitHubAccessToken, getGitHubUserProfile, getGitHubUserEmail, getOrCreateUser } = require("./auth.service");
+const { getGitHubAccessToken, getGitHubUserProfile, getGitHubUserEmail, getOrCreateUser, deleteRefreshToken } = require("./auth.service");
 const { generateAccessToken, generateRefreshToken, regenerateRefreshToken } = require("../../utils/tokens");
 
 const gitHubOAuth = async (req, res) => {
@@ -69,8 +69,23 @@ const refresh = async (req, res) => {
     return res.status(StatusCodes.OK).json({ status: "success", access_token: result.accessToken, refresh_token: result.refreshToken });
 }
 
+const logout = async (req, res) => {
+    const { refresh_token } = req.body;
+    if (!refresh_token) {
+        return res.status(StatusCodes.BAD_REQUEST).json({ status: "error", message: "Missing refresh token" });
+    }
+
+    const result = await deleteRefreshToken(refresh_token);
+    if (!result) {
+        return res.status(StatusCodes.UNAUTHORIZED).json({ status: "error", message: "Invalid refresh token" });
+    }
+
+    return res.status(StatusCodes.OK).json({ status: "success", message: "Logged out successfully" });
+}
+
 module.exports = {
     gitHubOAuth,
     gitHubCallback,
-    refresh
+    refresh,
+    logout
 }
