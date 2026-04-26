@@ -6,7 +6,7 @@ const { uuidv7 } = require("uuidv7");
 
 const generateAccessToken = (user) => {
     return jwt.sign(
-        { id: user.id, github_id: user.github_id, username: user.username },
+        { id: user.id, username: user.username, role: user.role, is_active: user.is_active },
         config.JWT_SECRET,
         { expiresIn: "3m" }
     );
