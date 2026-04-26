@@ -1,7 +1,8 @@
 const express = require('express');
+const { gitHubOAuth } = require('./auth.controller');
 const router = express.Router();
 
-router.get('/github', (req, res) => {});
+router.get('/github', gitHubOAuth);
 
 router.get('/github/callback', (req, res) => {});
 

@@ -1,5 +1,6 @@
 const express = require('express');
 const userData = require('../modules/profile/user-data.routes');
+const authRoutes = require('../modules/auth/auth.routes');
 const rateLimitHandler = require('../middleware/rateLimitHandler');
 
 module.exports = function (app) {
@@ -8,6 +9,6 @@ module.exports = function (app) {
 
     app.use(rateLimitHandler);
 
-    app.use('/api/auth', userData); 
+    app.use('/api/auth', authRoutes); 
     app.use('/api/profiles', userData);
 }

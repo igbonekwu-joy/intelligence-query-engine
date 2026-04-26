@@ -7,6 +7,7 @@ const { default: helmet } = require('helmet');
 const compression = require('compression');
 const timeout = require('connect-timeout');
 const responseTimeHandler = require('./middleware/responseTimeHandler');
+const session = require('express-session');
 
 const app = express();
 const PORT = config.PORT;
@@ -22,6 +23,13 @@ app.use(helmet({
 }));
 
 app.use(compression()); 
+
+app.use(session({
+    secret: config.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: { secure: false }
+}));
 
 require('./startup/routes')(app);
 require('./startup/logger')();
