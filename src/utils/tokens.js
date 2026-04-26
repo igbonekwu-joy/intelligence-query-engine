@@ -29,6 +29,7 @@ const regenerateRefreshToken = async (oldToken) => {
         `SELECT * FROM refresh_tokens WHERE token = $1 AND expires_at > NOW()`,
         [oldToken]
     );
+
     if (result.rows.length === 0) return null;
 
     const { user_id } = result.rows[0];
@@ -47,7 +48,7 @@ const regenerateRefreshToken = async (oldToken) => {
 
     const user = userResult.rows[0];
     const accessToken = generateAccessToken(user);
-    const refreshToken = generateRefreshToken(result.rows[0].user_id);
+    const refreshToken = await generateRefreshToken(user_id);
 
     return { accessToken, refreshToken, user };
 }

@@ -1,13 +1,14 @@
 const express = require('express');
-const { gitHubOAuth, gitHubCallback } = require('./auth.controller');
+const { gitHubOAuth, gitHubCallback, refresh } = require('./auth.controller');
+const asyncHandler = require('../../middleware/asyncHandler');
 const router = express.Router();
 
-router.get('/github', gitHubOAuth);
+router.get('/github', asyncHandler(gitHubOAuth));
 
-router.get('/github/callback', gitHubCallback);
-
-router.post('/refresh', (req, res) => {});
+router.get('/github/callback', asyncHandler(gitHubCallback));
+ 
+router.post('/refresh', asyncHandler(refresh));
 
 router.post('/logout', (req, res) => {});
 
-module.exports = router;
+module.exports = router; 

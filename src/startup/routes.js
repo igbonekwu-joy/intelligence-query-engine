@@ -9,6 +9,6 @@ module.exports = function (app) {
 
     app.use(rateLimitHandler);
 
-    app.use('/api/auth', authRoutes); 
+    app.use('/auth', authRoutes); 
     app.use('/api/profiles', userData);
 }
