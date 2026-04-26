@@ -1,8 +1,8 @@
-const { createAxiosInstance } = require("../utils/axios");
-const config = require("../config");
+const { createAxiosInstance } = require("../../utils/axios");
+const config = require("../../config");
 const { StatusCodes } = require("http-status-codes");
 const winston = require("winston");
-const pool = require("../startup/database");
+const pool = require("../../startup/database");
 
 const axiosGetInstance = createAxiosInstance(
   '/'
@@ -148,7 +148,7 @@ const sort = (sort_by, order) => {
 const paginate = (pageQuery, limitQuery) => {
   const page = Math.max(1, parseInt(pageQuery) || 1);  
   const limit = Math.min(50, Math.max(1, parseInt(limitQuery) || 10)); 
-  const offset = (page - 1) * limit;
+  const offset = (page - 1) * limit; //skip
 
   const paginationClause = `LIMIT ${limit} OFFSET ${offset}`;
 

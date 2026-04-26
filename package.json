@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node src/app.js",
     "dev": "nodemon app.js",
-    "seed": "node src/modules/user-data.seed.js"
+    "seed": "node src/modules/profile/user-data.seed.js"
   },
   "keywords": [],
   "author": "",

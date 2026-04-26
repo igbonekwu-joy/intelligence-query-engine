@@ -1,6 +1,6 @@
 const express = require('express');
 const { storeUserData, fetchUserData, index, deleteUserData, search } = require('./user-data.controller');
-const asyncHandler = require('../middleware/asyncHandler');
+const asyncHandler = require('../../middleware/asyncHandler');
 const { StatusCodes } = require('http-status-codes');
 const router = express.Router();
 
