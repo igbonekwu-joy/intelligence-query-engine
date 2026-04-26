@@ -1,4 +1,4 @@
-const { createAxiosInstance } = require("./service/axios");
+const { createAxiosInstance } = require("../../utils/axios");
 const config = require("../../config");
 const { StatusCodes } = require("http-status-codes");
 const winston = require("winston");

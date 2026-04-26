@@ -1,6 +1,7 @@
 const { StatusCodes } = require("http-status-codes");
 const config = require("../../config");
-const { generateCodeVerifier, generateCodeChallenge } = require("../../utils/pkce")
+const { generateCodeVerifier, generateCodeChallenge } = require("../../utils/pkce");
+const { getGitHubAccessToken, getGitHubUserProfile, getGitHubUserEmail, getOrCreateUser } = require("./auth.service");
 
 const gitHubOAuth = async (req, res) => {
     const verifier = generateCodeVerifier();
@@ -32,17 +33,22 @@ const gitHubCallback = async (req, res) => {
         return res.status(StatusCodes.BAD_REQUEST).json({ status: "error", message: "Missing code or verifier" });
     }
 
-    const tokenResponse = await axios.post(
-        'https://github.com/login/oauth/access_token',
-        {
-            client_id: process.env.GITHUB_CLIENT_ID,
-            client_secret: process.env.GITHUB_CLIENT_SECRET,
-            code,
-            redirect_uri: process.env.GITHUB_CALLBACK_URL,
-            code_verifier: verifier,
-        },
-        { headers: { Accept: 'application/json' } }
-    );
+    const accessToken = await getGitHubAccessToken({ code, verifier }); 
+    if (accessToken.statusCode) {
+        return res.status(accessToken.statusCode).json({ status: "error", message: accessToken.message });
+    }
+
+    const userProfile = await getGitHubUserProfile(accessToken);
+    let email = userProfile.email;
+    if (!email) {
+        email = await getGitHubUserEmail(accessToken);
+    }
+
+    const user = await getOrCreateUser(userProfile, email);
+
+    delete req.session.codeVerifier;
+
+    return res.status(StatusCodes.OK).json({ status: "success", user })
 }
 
 module.exports = {
