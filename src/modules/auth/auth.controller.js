@@ -2,6 +2,7 @@ const { StatusCodes } = require("http-status-codes");
 const config = require("../../config");
 const { generateCodeVerifier, generateCodeChallenge } = require("../../utils/pkce");
 const { getGitHubAccessToken, getGitHubUserProfile, getGitHubUserEmail, getOrCreateUser } = require("./auth.service");
+const { generateAccessToken, generateRefreshToken } = require("../../utils/tokens");
 
 const gitHubOAuth = async (req, res) => {
     const verifier = generateCodeVerifier();
@@ -33,22 +34,25 @@ const gitHubCallback = async (req, res) => {
         return res.status(StatusCodes.BAD_REQUEST).json({ status: "error", message: "Missing code or verifier" });
     }
 
-    const accessToken = await getGitHubAccessToken({ code, verifier }); 
-    if (accessToken.statusCode) {
-        return res.status(accessToken.statusCode).json({ status: "error", message: accessToken.message });
+    const githubAccessToken = await getGitHubAccessToken({ code, verifier }); 
+    if (githubAccessToken.statusCode) {
+        return res.status(githubAccessToken.statusCode).json({ status: "error", message: githubAccessToken.message });
     }
 
-    const userProfile = await getGitHubUserProfile(accessToken);
+    const userProfile = await getGitHubUserProfile(githubAccessToken);
     let email = userProfile.email;
     if (!email) {
-        email = await getGitHubUserEmail(accessToken);
+        email = await getGitHubUserEmail(githubAccessToken);
     }
 
     const user = await getOrCreateUser(userProfile, email);
 
     delete req.session.codeVerifier;
 
-    return res.status(StatusCodes.OK).json({ status: "success", user })
+    const accessToken = generateAccessToken(user);
+    const refreshToken = await generateRefreshToken(user.id);
+
+    return res.status(StatusCodes.OK).json({ status: "success", access_token: accessToken, refresh_token: refreshToken });
 }
 
 module.exports = {
