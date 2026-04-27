@@ -54,6 +54,14 @@ jobs:
       GITHUB_CLIENT_ID: test_client_id
       GITHUB_CLIENT_SECRET: test_client_secret
       GITHUB_CALLBACK_URL: http://localhost:3000/auth/github/callback
+      GITHUB_LOGIN_REDIRECT_URL: https://github.com/login/oauth/authorize
+      GITHUB_ACCESS_TOKEN_URL: https://github.com/login/oauth/access_token
+      GITHUB_USER_API_URL: https://api.github.com/user
+      GITHUB_STATE_STRING: test_state_string
+      GENDERIZE_API_URL: https://api.genderize.io
+      AGIFY_API_URL: https://api.agify.io
+      NATIONALIZE_API_URL: https://api.nationalize.io
+      API_VERSION: 1
 
     steps:
       - name: Checkout code
