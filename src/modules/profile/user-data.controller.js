@@ -1,10 +1,11 @@
 const { StatusCodes } = require("http-status-codes");
-const { validateName, validateQueryParams } = require("./user-data.validator");
+const { validateName, validateQueryParams, validateSearchQueryParams } = require("./user-data.validator");
 const { fetchGender, fetchAge, fetchCountryList, findUserByName, edgeCases, getAgeGroup, filter, sort, paginate, fetchProfiles } = require("./user-data.service");
 const { uuidv7 } = require("uuidv7");
 const pool = require("../../startup/database");
 const winston = require("winston");
 const { parseNaturalQuery } = require("../../utils/queryParser");
+const { Parser } = require("json2csv");
 
 const index = async (req, res) => {
     const { error } = validateQueryParams.validate(req.query);
@@ -18,43 +19,33 @@ const index = async (req, res) => {
         return res.status(StatusCodes.NOT_FOUND).json({ status: "error", message: "No profiles found" });
     }
 
+    const totalPages = Math.ceil(total / limit);
+    const self = `${req.baseUrl}?page=${page}&limit=${limit}`;
+    const next = page * limit < total ? `${req.baseUrl}?page=${page + 1}&limit=${limit}` : null;
+    const prev = page > 1 ? `${req.baseUrl}?page=${page - 1}&limit=${limit}` : null;
+
     return res.status(StatusCodes.OK).json({ 
         status: "success", 
         page: page, 
         limit: limit, 
         total, 
+        total_pages: totalPages,
+        links: {
+            self,
+            next,
+            prev
+        },
         data: result 
     });
 } 
 
+
 const search = async (req, res) => {
-    const VALID_QUERY_PARAMS = ['q', 'page', 'limit'];
-    
     const { q, page: pageQuery, limit: limitQuery } = req.query;
 
-    // check for invalid query parameters
-    const invalidParams = Object.keys(req.query).filter(k => !VALID_QUERY_PARAMS.includes(k));
-    if (invalidParams.length > 0) {
-        return res.status(StatusCodes.BAD_REQUEST).json({
-            status: 'error',
-            message: 'Invalid query parameters'
-        });
-    }
-
-    // missing or empty q
-    if (!q || q.trim() === '') {
-        return res.status(StatusCodes.BAD_REQUEST).json({
-            status: 'error',
-            message: 'Invalid query parameters'
-        });
-    }
-
-    // invalid page/limit types
-    if ((pageQuery && isNaN(pageQuery)) || (limitQuery && isNaN(limitQuery))) {
-        return res.status(StatusCodes.UNPROCESSABLE_ENTITY).json({
-            status: 'error',
-            message: 'Invalid query parameters'
-        });
+    const { error } = validateSearchQueryParams.validate(req.query);
+    if (error) {
+        return res.status(StatusCodes.BAD_REQUEST).json({ status: "error", message: "Invalid query parameters" });
     }
 
     // parse natural language query
@@ -79,17 +70,17 @@ const search = async (req, res) => {
 
     if (filters.gender) {
         conditions.push(`gender = $${paramCount++}`);
-        values.push(filters.gender);
+        values.push(filters.gender.toLowerCase());
     }
 
     if (filters.age_group) {
         conditions.push(`age_group = $${paramCount++}`);
-        values.push(filters.age_group);
+        values.push(filters.age_group.toLowerCase());
     }
 
     if (filters.country_id) {
         conditions.push(`country_id = $${paramCount++}`);
-        values.push(filters.country_id);
+        values.push(filters.country_id.toUpperCase());
     }
 
     if (filters.min_age !== undefined) {
@@ -104,12 +95,19 @@ const search = async (req, res) => {
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
-    // get total count (reuse same values array)
-    const countQuery = `SELECT COUNT(*) FROM profiles ${whereClause}`;
-    const countResult = await pool.query(countQuery, values);
-    const totalItems = parseInt(countResult.rows[0].count);
+    const [countResult, result] = await Promise.all([
+        pool.query(`SELECT COUNT(*) FROM profiles ${whereClause}`, values),
+        pool.query(
+            `SELECT id, name, gender, gender_probability, age, age_group, country_id, country_name, country_probability, created_at AT TIME ZONE 'UTC' AS created_at
+            FROM profiles
+            ${whereClause}
+            ORDER BY created_at DESC
+            LIMIT ${limit} OFFSET ${offset}`,
+            values
+        )
+    ]);
 
-    // 404 - no profiles found
+    const totalItems = parseInt(countResult.rows[0].count);
     if (totalItems === 0) {
         return res.status(StatusCodes.NOT_FOUND).json({
             status: 'error',
@@ -117,24 +115,65 @@ const search = async (req, res) => {
         });
     }
 
-    const query = `
-        SELECT id, name, gender, gender_probability, age, age_group, country_id, country_name, country_probability, created_at AT TIME ZONE 'UTC' AS created_at
-        FROM profiles
-        ${whereClause}
-        ORDER BY created_at DESC
-        LIMIT ${limit} OFFSET ${offset}
-    `;
-
-    const result = await pool.query(query, values);
+    const total_pages = Math.ceil(totalItems / limit);
+    const self = `${req.baseUrl + req.path}?q=${encodeURIComponent(q)}&page=${page}&limit=${limit}`;
+    const next = page * limit < totalItems ? `${req.baseUrl + req.path}?q=${encodeURIComponent(q)}&page=${page + 1}&limit=${limit}` : null;
+    const prev = page > 1 ? `${req.baseUrl + req.path}?q=${encodeURIComponent(q)}&page=${page - 1}&limit=${limit}` : null;
 
     return res.status(StatusCodes.OK).json({
         status: 'success',
         page,
         limit,
         total: totalItems,
+        total_pages,
+        links: {
+            self,
+            next,
+            prev
+        },
         data: result.rows
     });
 
+}
+
+const exportProfiles = async (req, res) => {
+    const { error } = validateQueryParams.validate(req.query);
+    if (error) {
+        return res.status(StatusCodes.BAD_REQUEST).json({ status: "error", message: "Invalid query parameters" });
+    }
+
+    const { format } = req.query;
+    if (!format || format !== 'csv') {
+        return res.status(StatusCodes.BAD_REQUEST).json({ status: "error", message: "Invalid or missing format. Use format=csv" });
+    }
+
+    const { rows: result, total } = await fetchProfiles(req, { paginate: false });
+    if (total === 0) {
+        return res.status(StatusCodes.NOT_FOUND).json({ status: "error", message: "No profiles found" });
+    }
+
+    const fields = [
+        { label: 'ID', value: 'id' },
+        { label: 'Name', value: 'name' },
+        { label: 'Gender', value: 'gender' },
+        { label: 'Gender Probability', value: 'gender_probability' },
+        { label: 'Age', value: 'age' },
+        { label: 'Age Group', value: 'age_group' },
+        { label: 'Country ID', value: 'country_id' },
+        { label: 'Country Name', value: 'country_name' },
+        { label: 'Country Probability', value: 'country_probability' },
+        { label: 'Created At', value: 'created_at' },
+    ];
+
+    const parser = new Parser({ fields });
+    const csv = parser.parse(result);
+
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="profiles_${timestamp}.csv"`);
+
+    return res.status(StatusCodes.OK).send(csv);
 }
 
 const storeUserData = async (req, res) => {
@@ -227,6 +266,7 @@ const deleteUserData = async (req, res) => {
 module.exports = {
     index,
     search,
+    exportProfiles,
     storeUserData,
     fetchUserData,
     deleteUserData

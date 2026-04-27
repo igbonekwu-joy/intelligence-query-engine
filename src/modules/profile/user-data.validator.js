@@ -23,7 +23,14 @@ const validateQueryParams = Joi.object().keys({
     limit: Joi.number().integer().min(1)
 });
 
+const validateSearchQueryParams = Joi.object().keys({
+    q: Joi.string().trim().min(2).max(100).required(),
+    page: Joi.number().integer().min(1),
+    limit: Joi.number().integer().min(1).max(50)
+});
+
 module.exports = {
     validateName,
-    validateQueryParams
+    validateQueryParams,
+    validateSearchQueryParams
 }

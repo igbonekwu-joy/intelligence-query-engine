@@ -6,7 +6,7 @@ const { uuidv7 } = require("uuidv7");
 
 const generateAccessToken = (user) => {
     return jwt.sign(
-        { id: user.id, github_id: user.github_id, username: user.username },
+        { id: user.id, username: user.username, role: user.role, is_active: user.is_active },
         config.JWT_SECRET,
         { expiresIn: "3m" }
     );
@@ -15,6 +15,11 @@ const generateAccessToken = (user) => {
 const generateRefreshToken = async (userId) => {
     const token = crypto.randomBytes(64).toString('hex');
     const expires = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+
+    await pool.query(
+        `DELETE FROM refresh_tokens WHERE user_id = $1`,
+        [userId]
+    );
 
     await pool.query(
         `INSERT INTO refresh_tokens (id, user_id, token, expires_at) VALUES ($1, $2, $3, $4)`,
