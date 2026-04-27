@@ -163,7 +163,7 @@ const fetchProfiles = async (req, options = {}) => {
 
   const orderBy = sort(sort_by, order);
 
-  const { page: pageEntered, limit: limitEntered, offset, paginationClause } = paginate(page, limit, shouldPaginate);
+  const { page: pageEntered, limit: limitEntered, paginationClause } = paginate(page, limit, shouldPaginate);
 
   const [result, countResult] = await Promise.all([
     pool.query(

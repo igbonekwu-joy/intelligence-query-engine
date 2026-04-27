@@ -7,23 +7,6 @@ require("../../startup/logger")();
 const seed = async () => {
   try {
     winston.info("Starting seeding process...");
-    
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS profiles (
-        id UUID PRIMARY KEY,
-        name VARCHAR(255) UNIQUE,
-        gender VARCHAR(255),
-        gender_probability FLOAT,
-        sample_size INT,
-        age INT,
-        age_group VARCHAR(255),
-        country_id VARCHAR(2),
-        country_name VARCHAR(255),
-        country_probability FLOAT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
 
     for (const profile of data.profiles) {
       await pool.query(

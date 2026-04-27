@@ -6,13 +6,14 @@
   "scripts": {
     "start": "node src/app.js",
     "dev": "nodemon app.js",
-    "lint": "eslint . --ext .js --ignore-path .eslintignore",
+    "seed": "node src/modules/profile/user-data.seed.js",
+    "migrate": "node src/migrations/users.migration.js && node src/migrations/tokens.migration.js && node src/migrations/profiles.migration.js",
+    "db:setup": "npm run migrate && npm run seed",
+    "lint": "eslint . --ext .js",
     "test": "jest --forceExit --detectOpenHandles",
     "test:watch": "jest --watchAll --verbose",
     "test:coverage": "jest --coverage",
-    "build:check": "node --check src/app.js",
-    "seed": "node src/modules/profile/user-data.seed.js",
-    "migrate": "node src/migrations/users.migration.js && node src/migrations/tokens.migration.js"
+    "build:check": "node --check src/app.js"
   },
   "keywords": [],
   "author": "",
@@ -40,6 +41,7 @@
     "winston": "^3.19.0"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "eslint": "^10.2.1",
     "jest": "^30.3.0",
     "supertest": "^7.2.2"

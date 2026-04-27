@@ -57,7 +57,7 @@ const insertTestProfile = async (overrides = {}) => {
 
  // clean up test data after each test
 afterEach(async () => {
-    await pool.query(`DELETE FROM profiles WHERE name IN ('testuser', 'james')`);
+    await pool.query(`DELETE FROM profiles WHERE name IN ('testuser', 'jonathan')`);
     jest.clearAllMocks();
 });
 
@@ -67,7 +67,7 @@ afterAll(async () => {
 
 describe('POST /api/profiles', () => {
     beforeEach(async () => {
-        await pool.query(`DELETE FROM profiles WHERE name IN ('testuser', 'james')`);
+        await pool.query(`DELETE FROM profiles WHERE name IN ('testuser', 'jonathan')`);
 
         findUserByName.mockResolvedValue(null);
         // mock responses for external APIs
@@ -86,7 +86,7 @@ describe('POST /api/profiles', () => {
         const res = await request(server)
             .post('/api/profiles')
             .set('X-API-Version', '1')
-            .send({ name: 'james' });
+            .send({ name: 'jonathan' });
 
         expect(res.statusCode).toBe(401);
         expect(res.body.status).toBe('error');
@@ -96,12 +96,12 @@ describe('POST /api/profiles', () => {
         const res = await request(server)
             .post('/api/profiles')
             .set(authHeaders)
-            .send({ name: 'james' });
+            .send({ name: 'jonathan' });
 
         expect(res.statusCode).toBe(201);
         expect(res.body.status).toBe('success');
         expect(res.body.data).toHaveProperty('id');
-        expect(res.body.data.name).toBe('james');
+        expect(res.body.data.name).toBe('jonathan');
         expect(res.body.data).toHaveProperty('gender');
         expect(res.body.data).toHaveProperty('age');
         expect(res.body.data).toHaveProperty('country_id');
@@ -109,18 +109,18 @@ describe('POST /api/profiles', () => {
     });
 
     it('should return 200 with existing profile if name already exists', async () => {
-        const existing = await insertTestProfile({ name: 'james' });
+        const existing = await insertTestProfile({ name: 'jonathan' });
         findUserByName.mockResolvedValue(existing);
 
         const res = await request(server)
             .post('/api/profiles')
             .set(authHeaders)
-            .send({ name: 'james' });
+            .send({ name: 'jonathan' });
 
         expect(res.statusCode).toBe(200);
         expect(res.body.status).toBe('success');
         expect(res.body.message).toBe('Profile already exists');
-        expect(res.body.data.name).toBe('james');
+        expect(res.body.data.name).toBe('jonathan');
     });
 
     it('should return 400 if name is missing', async () => {
@@ -162,7 +162,7 @@ describe('POST /api/profiles', () => {
         const res = await request(server)
             .post('/api/profiles')
             .set(authHeaders)
-            .send({ name: 'james' });
+            .send({ name: 'jonathan' });
 
         expect(res.statusCode).toBe(502);
         expect(res.body.status).toBe('502');
@@ -178,7 +178,7 @@ describe('POST /api/profiles', () => {
         const res = await request(server)
             .post('/api/profiles')
             .set(authHeaders)
-            .send({ name: 'james' });
+            .send({ name: 'jonathan' });
 
         expect(res.statusCode).toBe(502);
         expect(res.body.status).toBe('502');
@@ -194,7 +194,7 @@ describe('POST /api/profiles', () => {
         const res = await request(server)
             .post('/api/profiles')
             .set(authHeaders)
-            .send({ name: 'james' });
+            .send({ name: 'jonathan' });
 
         expect(res.statusCode).toBe(502);
         expect(res.body.status).toBe('502');
