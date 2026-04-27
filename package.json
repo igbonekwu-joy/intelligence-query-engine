@@ -7,6 +7,8 @@
     "start": "node src/app.js",
     "dev": "nodemon app.js",
     "lint": "eslint . --ext .js --ignore-path .eslintignore",
+    "test": "jest --forceExit --detectOpenHandles",
+    "build:check": "node --check src/app.js",
     "seed": "node src/modules/profile/user-data.seed.js",
     "migrate": "node src/migrations/users.migration.js && node src/migrations/tokens.migration.js"
   },
