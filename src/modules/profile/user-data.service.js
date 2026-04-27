@@ -145,24 +145,25 @@ const sort = (sort_by, order) => {
   return orderBy;
 }
 
-const paginate = (pageQuery, limitQuery) => {
+const paginate = (pageQuery, limitQuery, shouldPaginate) => {
   const page = Math.max(1, parseInt(pageQuery) || 1);  
   const limit = Math.min(50, Math.max(1, parseInt(limitQuery) || 10)); 
   const offset = (page - 1) * limit; //skip
 
-  const paginationClause = `LIMIT ${limit} OFFSET ${offset}`;
+  const paginationClause = shouldPaginate ? `LIMIT ${limit} OFFSET ${offset}` : '';
 
   return { page, limit, offset, paginationClause };
 }
 
-const fetchProfiles = async (req) => {
+const fetchProfiles = async (req, options = {}) => {
+  const shouldPaginate = options.paginate;
   const { gender, country_id, age_group, min_age, max_age, min_gender_probability, min_country_probability, sort_by, order, page, limit } = req.query;
 
   const { whereClause, values } = filter(gender, country_id, age_group, min_age, max_age, min_gender_probability, min_country_probability);
 
   const orderBy = sort(sort_by, order);
 
-  const { page: pageEntered, limit: limitEntered, offset, paginationClause } = paginate(page, limit);
+  const { page: pageEntered, limit: limitEntered, offset, paginationClause } = paginate(page, limit, shouldPaginate);
 
   const [result, countResult] = await Promise.all([
     pool.query(

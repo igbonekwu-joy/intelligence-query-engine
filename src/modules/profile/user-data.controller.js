@@ -1,5 +1,5 @@
 const { StatusCodes } = require("http-status-codes");
-const { validateName, validateQueryParams, validateSearchQueryParams } = require("./user-data.validator");
+const { validateName, validateQueryParams, validateSearchQueryParams, validateExportQueryParams } = require("./user-data.validator");
 const { fetchGender, fetchAge, fetchCountryList, findUserByName, edgeCases, getAgeGroup, filter, sort, paginate, fetchProfiles } = require("./user-data.service");
 const { uuidv7 } = require("uuidv7");
 const pool = require("../../startup/database");
@@ -13,7 +13,7 @@ const index = async (req, res) => {
         return res.status(StatusCodes.BAD_REQUEST).json({ status: "error", message: "Invalid query parameters" });
     }
 
-    const { page, limit, total, rows: result } = await fetchProfiles(req);
+    const { page, limit, total, rows: result } = await fetchProfiles(req, { paginate: true });
 
     if (total === 0) {
         return res.status(StatusCodes.NOT_FOUND).json({ status: "error", message: "No profiles found" });
@@ -137,14 +137,9 @@ const search = async (req, res) => {
 }
 
 const exportProfiles = async (req, res) => {
-    const { error } = validateQueryParams.validate(req.query);
+    const { error } = validateExportQueryParams.validate(req.query);
     if (error) {
         return res.status(StatusCodes.BAD_REQUEST).json({ status: "error", message: "Invalid query parameters" });
-    }
-
-    const { format } = req.query;
-    if (!format || format !== 'csv') {
-        return res.status(StatusCodes.BAD_REQUEST).json({ status: "error", message: "Invalid or missing format. Use format=csv" });
     }
 
     const { rows: result, total } = await fetchProfiles(req, { paginate: false });
