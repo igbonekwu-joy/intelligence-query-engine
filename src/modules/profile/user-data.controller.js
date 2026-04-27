@@ -5,6 +5,7 @@ const { uuidv7 } = require("uuidv7");
 const pool = require("../../startup/database");
 const winston = require("winston");
 const { parseNaturalQuery } = require("../../utils/queryParser");
+const { Parser } = require("json2csv");
 
 const index = async (req, res) => {
     const { error } = validateQueryParams.validate(req.query);
@@ -37,6 +38,7 @@ const index = async (req, res) => {
         data: result 
     });
 } 
+
 
 const search = async (req, res) => {
     const { q, page: pageQuery, limit: limitQuery } = req.query;
@@ -134,6 +136,46 @@ const search = async (req, res) => {
 
 }
 
+const exportProfiles = async (req, res) => {
+    const { error } = validateQueryParams.validate(req.query);
+    if (error) {
+        return res.status(StatusCodes.BAD_REQUEST).json({ status: "error", message: "Invalid query parameters" });
+    }
+
+    const { format } = req.query;
+    if (!format || format !== 'csv') {
+        return res.status(StatusCodes.BAD_REQUEST).json({ status: "error", message: "Invalid or missing format. Use format=csv" });
+    }
+
+    const { rows: result, total } = await fetchProfiles(req, { paginate: false });
+    if (total === 0) {
+        return res.status(StatusCodes.NOT_FOUND).json({ status: "error", message: "No profiles found" });
+    }
+
+    const fields = [
+        { label: 'ID', value: 'id' },
+        { label: 'Name', value: 'name' },
+        { label: 'Gender', value: 'gender' },
+        { label: 'Gender Probability', value: 'gender_probability' },
+        { label: 'Age', value: 'age' },
+        { label: 'Age Group', value: 'age_group' },
+        { label: 'Country ID', value: 'country_id' },
+        { label: 'Country Name', value: 'country_name' },
+        { label: 'Country Probability', value: 'country_probability' },
+        { label: 'Created At', value: 'created_at' },
+    ];
+
+    const parser = new Parser({ fields });
+    const csv = parser.parse(result);
+
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="profiles_${timestamp}.csv"`);
+
+    return res.status(StatusCodes.OK).send(csv);
+}
+
 const storeUserData = async (req, res) => {
     const name = req.body.name;
 
@@ -224,6 +266,7 @@ const deleteUserData = async (req, res) => {
 module.exports = {
     index,
     search,
+    exportProfiles,
     storeUserData,
     fetchUserData,
     deleteUserData
