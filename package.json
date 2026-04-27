@@ -6,6 +6,11 @@
   "scripts": {
     "start": "node src/app.js",
     "dev": "nodemon app.js",
+    "lint": "eslint . --ext .js --ignore-path .eslintignore",
+    "test": "jest --forceExit --detectOpenHandles",
+    "test:watch": "jest --watchAll --verbose",
+    "test:coverage": "jest --coverage",
+    "build:check": "node --check src/app.js",
     "seed": "node src/modules/profile/user-data.seed.js",
     "migrate": "node src/migrations/users.migration.js && node src/migrations/tokens.migration.js"
   },
@@ -33,5 +38,10 @@
     "pg": "^8.20.0",
     "uuidv7": "^1.2.1",
     "winston": "^3.19.0"
+  },
+  "devDependencies": {
+    "eslint": "^10.2.1",
+    "jest": "^30.3.0",
+    "supertest": "^7.2.2"
   }
 }

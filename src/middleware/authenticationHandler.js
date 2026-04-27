@@ -18,7 +18,7 @@ const authenticate = (req, res, next) => {
         const decoded = jwt.verify(token, config.JWT_SECRET);
         req.user = decoded;
 
-        if (!req.user.is_active) {
+        if (req.user.is_active === false) {
             return res.status(StatusCodes.FORBIDDEN).json({ status: "error", message: "User account is not active" });
         }
 
