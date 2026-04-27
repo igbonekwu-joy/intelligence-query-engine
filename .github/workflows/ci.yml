@@ -46,7 +46,9 @@ jobs:
           --health-retries 5
 
     env:
+      NODE_ENV: test
       POSTGRES_URI: postgresql://postgres:postgres@localhost:5432/hng_test
+      POSTGRES_TEST_URI: postgresql://postgres:postgres@localhost:5432/hng_test
       JWT_SECRET: test_jwt_secret
       SESSION_SECRET: test_session_secret
       GITHUB_CLIENT_ID: test_client_id
