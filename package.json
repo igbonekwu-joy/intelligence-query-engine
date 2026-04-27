@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node src/app.js",
     "dev": "nodemon app.js",
-    "lint": "eslint . --ext .js --ignore-pattern node_modules/* --ignore-pattern coverage/*",
+    "lint": "eslint . --ext .js",
     "test": "jest --forceExit --detectOpenHandles",
     "test:watch": "jest --watchAll --verbose",
     "test:coverage": "jest --coverage",
@@ -41,6 +41,7 @@
     "winston": "^3.19.0"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "eslint": "^10.2.1",
     "jest": "^30.3.0",
     "supertest": "^7.2.2"
