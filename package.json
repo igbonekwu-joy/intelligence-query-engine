@@ -12,7 +12,8 @@
     "test:coverage": "jest --coverage",
     "build:check": "node --check src/app.js",
     "seed": "node src/modules/profile/user-data.seed.js",
-    "migrate": "node src/migrations/users.migration.js && node src/migrations/tokens.migration.js"
+    "migrate": "node src/migrations/users.migration.js && node src/migrations/tokens.migration.js",
+    "db:setup": "npm run migrate && npm run seed"
   },
   "keywords": [],
   "author": "",
