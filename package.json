@@ -10,7 +10,7 @@
     "migrate": "node src/migrations/users.migration.js && node src/migrations/tokens.migration.js && node src/migrations/profiles.migration.js",
     "db:setup": "npm run migrate && npm run seed",
     "lint": "eslint . --ext .js",
-    "test": "npm run migrate && jest --forceExit --detectOpenHandles",
+    "test": "jest --forceExit --detectOpenHandles",
     "test:watch": "jest --watchAll --verbose",
     "test:coverage": "jest --coverage",
     "build:check": "node --check src/app.js"
