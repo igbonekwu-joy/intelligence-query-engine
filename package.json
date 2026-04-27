@@ -6,14 +6,14 @@
   "scripts": {
     "start": "node src/app.js",
     "dev": "nodemon app.js",
+    "seed": "node src/modules/profile/user-data.seed.js",
+    "migrate": "node src/migrations/users.migration.js && node src/migrations/tokens.migration.js && node src/migrations/profiles.migration.js",
+    "db:setup": "npm run migrate && npm run seed",
     "lint": "eslint . --ext .js",
-    "test": "jest --forceExit --detectOpenHandles",
+    "test": "npm run migrate && jest --forceExit --detectOpenHandles",
     "test:watch": "jest --watchAll --verbose",
     "test:coverage": "jest --coverage",
-    "build:check": "node --check src/app.js",
-    "seed": "node src/modules/profile/user-data.seed.js",
-    "migrate": "node src/migrations/users.migration.js && node src/migrations/tokens.migration.js",
-    "db:setup": "npm run migrate && npm run seed"
+    "build:check": "node --check src/app.js"
   },
   "keywords": [],
   "author": "",
