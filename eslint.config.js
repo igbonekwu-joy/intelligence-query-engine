@@ -25,6 +25,13 @@ module.exports = [
                 __filename: "readonly",
                 console: "readonly",
 
+                URLSearchParams: "readonly",
+                URL: "readonly",
+                fetch: "readonly",
+                setTimeout: "readonly",
+                clearTimeout: "readonly",
+                Buffer: "readonly",
+
                 // jest globals
                 describe: "readonly",
                 it: "readonly",

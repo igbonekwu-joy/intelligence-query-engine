@@ -13,11 +13,10 @@ jest.mock('../../../modules/profile/user-data.service.js', () => ({
     fetchAge: jest.fn(),
     fetchCountryList: jest.fn(),
     findUserByName: jest.fn(),
-    edgeCases: jest.fn().mockReturnValue(null),
     getAgeGroup: jest.fn().mockReturnValue('adult'),
 }));
 
-const { fetchGender, fetchAge, fetchCountryList, findUserByName, edgeCases } = require("../../../modules/profile/user-data.service");
+const { fetchGender, fetchAge, fetchCountryList, findUserByName } = require("../../../modules/profile/user-data.service");
 
 const token = jwt.sign(
     { id: uuidv7(), username: 'test_user', role: 'admin', is_active: true },

@@ -1,6 +1,5 @@
 const express = require('express');
 const config = require('./config');
-const winston = require('winston');
 const errorHandler = require('./middleware/errorHandler');
 const cors = require('cors');
 const { default: helmet } = require('helmet');
