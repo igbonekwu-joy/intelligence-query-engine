@@ -23,7 +23,11 @@ A RESTful API built with Node.js and PostgreSQL that serves profile data with su
 - **Runtime:** Node.js
 - **Framework:** Express.js
 - **Database:** PostgreSQL (via `pg` pool)
+- **Authentication:** GitHub OAuth 2.0 with PKCE
+- **Authorization:** Role-Based Access Control (RBAC)
 - **Logging:** Winston
+- **ID Generation:** UUID v7
+- **Validation:** Joi
 - **Status Codes:** http-status-codes
 
 ---
@@ -70,16 +74,163 @@ NODE_ENV=development
 ## Database Setup
 
 ```bash
-# Seed the database with profile data
+# Run all migrations
+npm run migrate
+
+# Seed the database
 npm run seed
+
+# Or do both at once
+npm run db:setup
 ```
+
+---
+
+### Tables
+
+| Table | Description |
+|---|---|
+| `profiles` | Stores all profile data |
+| `users` | Stores GitHub OAuth users |
+| `refresh_tokens` | Stores active refresh tokens |
+
+---
+
+## Authentication
+
+This API uses **GitHub OAuth 2.0 with PKCE** (Proof Key for Code Exchange).
+
+### Auth Endpoints
+
+| Method | Endpoint | Description | Auth Required |
+|---|---|---|---|
+| `GET` | `/auth/github` | Redirects to GitHub OAuth | ❌ |
+| `GET` | `/auth/github/callback` | Handles OAuth callback, issues tokens | ❌ |
+| `POST` | `/auth/refresh` | Refreshes access and refresh tokens | ❌ |
+| `POST` | `/auth/logout` | Invalidates refresh token server-side | ❌ |
+
+### Token Expiry
+
+| Token | Expiry |
+|---|---|
+| Access token | 3 minutes |
+| Refresh token | 5 minutes |
+
+### Login Flow
+
+```
+GET /auth/github
+      ↓
+Redirects to GitHub with PKCE code_challenge
+      ↓
+User approves on GitHub
+      ↓
+GET /auth/github/callback
+      ↓
+Server exchanges code for GitHub token
+      ↓
+Creates or retrieves user in DB
+      ↓
+Returns access_token + refresh_token
+```
+
+### Refresh Token Flow
+
+```
+POST /auth/refresh
+Content-Type: application/json
+
+{
+  "refresh_token": "your_refresh_token"
+}
+```
+
+Response:
+```json
+{
+  "status": "success",
+  "access_token": "new_access_token",
+  "refresh_token": "new_refresh_token"
+}
+```
+
+> The old refresh token is **immediately invalidated** after use. Each refresh issues a new pair.
+
+### Logout
+
+```
+POST /auth/logout
+Content-Type: application/json
+
+{
+  "refresh_token": "your_refresh_token"
+}
+```
+
+### Using the access token
+
+Include the access token in every protected request:
+
+```
+Authorization: Bearer <access_token>
+X-API-Version: 1
+```
+
+---
+
+## Role-Based Access Control (RBAC)
+
+Users are assigned a role when they first log in via GitHub.
+
+### Available Roles
+
+| Role | Description |
+|---|---|
+| `analyst` | Default role. Can read and search profiles. |
+| `admin` | Full access including delete and post. |
+
+### Route Protection
+
+| Endpoint | Method | Role Required |
+|---|---|---|
+| `GET /api/profiles` | GET | `analyst`, `admin` |
+| `GET /api/profiles/:id` | GET | `analyst`, `admin` |
+| `GET /api/profiles/search` | GET | `analyst`, `admin` |
+| `GET /api/profiles/export` | GET | `analyst`, `admin` |
+| `POST /api/profiles` | POST | `admin` only |
+| `DELETE /api/profiles/:id` | DELETE | `admin` only |
 
 ---
 
 ## API Endpoints
 
+All protected endpoints require these headers:
+
+```
+Authorization: Bearer <access_token>
+X-API-Version: 1
+```
+
+### Profiles
+
 ### `GET /api/profiles`
-Returns a paginated list of profiles with optional filters.
+Returns a paginated list of profiles with optional filters, sorting, and pagination.
+
+**Supported filters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `gender` | string | `male` or `female` |
+| `age_group` | string | `child`, `teenager`, `adult`, `senior` |
+| `country_id` | string | ISO country code e.g. `NG` |
+| `min_age` | number | Minimum age (inclusive) |
+| `max_age` | number | Maximum age (inclusive) |
+| `min_gender_probability` | number | e.g. `0.9` |
+| `min_country_probability` | number | e.g. `0.8` |
+| `sort_by` | string | `age`, `created_at`, `gender_probability` |
+| `order` | string | `asc` or `desc` |
+| `page` | number | Default: `1` |
+| `limit` | number | Default: `10`, max: `50` |
 
 **Example:**
 ```
@@ -93,6 +244,12 @@ GET /api/profiles?gender=male&country_id=NG&min_age=25&sort_by=age&order=desc&pa
   "page": 1,
   "limit": 10,
   "total": 30,
+  "total_pages": 203,
+  "links": {
+    "self": "/api/profiles?page=1&limit=10",
+    "next": "/api/profiles?page=2&limit=10",
+    "prev": null
+  },
   "data": [
     {
       "id": "b3f9c1e2-7d4a-4c91-9c2a-1f0a8e5b6d12",
@@ -127,6 +284,12 @@ GET /api/profiles/search?q=young males from nigeria&page=1&limit=10
   "page": 1,
   "limit": 10,
   "total": 20,
+  "total_pages": 5,
+  "links": {
+    "self": "/api/profiles/search?q=young+males+from+nigeria&page=1&limit=10",
+    "next": "/api/profiles/search?q=young+males+from+nigeria&page=2&limit=10",
+    "prev": null
+  },
   "data": [
     {
       "id": "019db23b-15f5-7b77-b909-1751128944fb",
@@ -158,6 +321,57 @@ GET /api/profiles/search?q=young males from nigeria&page=1&limit=10
 
 ---
 
+#### `GET /api/profiles/export`
+Exports profiles to a CSV file. Supports the same filters as `GET /api/profiles`.
+
+```
+GET /api/profiles/export?format=csv&gender=male&country_id=NG
+```
+
+**Response (200):**
+- `Content-Type: text/csv`
+- `Content-Disposition: attachment; filename="profiles_<timestamp>.csv"`
+
+| Parameter | Required | Valid values |
+|---|---|---|
+| `format` | ✅ | `csv` |
+| `gender` | ❌ | `male`, `female` |
+| `country_id` | ❌ | ISO country code |
+| `age_group` | ❌ | `child`, `teenager`, `adult`, `senior` |
+| `min_age` | ❌ | Any positive integer |
+| `max_age` | ❌ | Any positive integer |
+
+---
+
+#### `GET /api/profiles/:id`
+Returns a single profile by UUID.
+
+```
+GET /api/profiles/018f6db0-1234-7abc-8def-123456789abc
+```
+
+---
+
+#### `POST /api/profiles`
+Creates a new profile by name. Gender, age, and country are resolved automatically via external APIs. **Admin only.**
+
+```json
+{
+  "name": "Harriet Tubman"
+}
+```
+
+---
+
+#### `DELETE /api/profiles/:id`
+Deletes a profile by UUID. **Admin only.**
+
+```
+DELETE /api/profiles/018f6db0-1234-7abc-8def-123456789abc
+```
+
+---
+
 ## Query Parameters
 
 ### `GET /api/profiles` — Supported Filters
@@ -175,6 +389,29 @@ GET /api/profiles/search?q=young males from nigeria&page=1&limit=10
 | `order` | string | `asc` or `desc` (default: `asc`) |
 | `page` | number | Page number (default: `1`) |
 | `limit` | number | Results per page (default: `10`, max: `50`) |
+
+---
+
+## Error Responses
+
+All errors follow this structure:
+
+```json
+{
+  "status": "error",
+  "message": "<error message>"
+}
+```
+
+| Status Code | Meaning |
+|---|---|
+| `400 Bad Request` | Missing or invalid parameters |
+| `401 Unauthorized` | Missing, invalid, or expired access token |
+| `403 Forbidden` | Valid token but insufficient role |
+| `404 Not Found` | Resource not found |
+| `422 Unprocessable Entity` | Invalid parameter type or uninterpretable query |
+| `502 Bad Gateway` | Upstream API failure |
+| `500 Internal Server Error` | Unexpected server error |
 
 ---
 
@@ -256,28 +493,6 @@ Supported countries include most of Africa, Europe, the Americas, Asia, and Ocea
 | `middle aged women from france` | `gender=female, min_age=40, max_age=60, country_id=FR` |
 | `teenage boys under 18` | `age_group=teenager, max_age=18` |
 | `men older than 40 from india` | `gender=male, min_age=40, country_id=IN` |
-
----
-
-## Error Responses
-
-All errors follow this structure:
-
-```json
-{
-  "status": "error",
-  "message": "<error message>"
-}
-```
-
-| Status Code | Meaning | Example trigger |
-|---|---|---|
-| `400 Bad Request` | Missing or empty `q` parameter | `?q=` or no `q` provided |
-| `400 Bad Request` | Invalid query parameters passed | `?q=...&unknown_param=x` |
-| `422 Unprocessable Entity` | Query could not be interpreted | `?q=xyzabc123` |
-| `422 Unprocessable Entity` | `page` or `limit` is not a number | `?page=abc` |
-| `404 Not Found` | No profiles matched the query | Valid query but zero results |
-| `500 Internal Server Error` | Unexpected server failure | Database down etc. |
 
 ---
 
