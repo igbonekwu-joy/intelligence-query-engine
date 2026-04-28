@@ -40,9 +40,16 @@ const gitHubCallback = async (req, res) => {
     }
 
     const userProfile = await getGitHubUserProfile(githubAccessToken);
+    if (userProfile?.statusCode) {
+        return res.status(userProfile?.statusCode).json({ status: "error", message: userProfile?.message });
+    }
+
     let email = userProfile.email;
     if (!email) {
         email = await getGitHubUserEmail(githubAccessToken);
+        if (email?.statusCode) {
+            return res.status(email?.statusCode).json({ status: "error", message: email?.message });
+        }
     }
 
     const user = await getOrCreateUser(userProfile, email);
