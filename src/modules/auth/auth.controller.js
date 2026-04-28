@@ -7,8 +7,10 @@ const { generateAccessToken, generateRefreshToken, regenerateRefreshToken } = re
 const gitHubOAuth = async (req, res) => {
     const verifier = generateCodeVerifier();
     const challenge = generateCodeChallenge(verifier);
+    const clientType = req.query.client || 'web'; // capture client type from query params in case of CLI requests
 
     req.session.codeVerifier = verifier;
+    req.session.clientType = clientType; 
 
     const params = new URLSearchParams({
         client_id: config.GITHUB_CLIENT_ID,
@@ -55,13 +57,18 @@ const gitHubCallback = async (req, res) => {
     const user = await getOrCreateUser(userProfile, email);
 
     delete req.session.codeVerifier;
+    const clientType = req.session.clientType || 'web'; // retrieve stored client type
+    delete req.session.clientType;
 
     const accessToken = generateAccessToken(user);
     const refreshToken = await generateRefreshToken(user.id);
-    console.log(accessToken, refreshToken);
-
-    return res.redirect(`${config.CLI_URL}/callback?access_token=${accessToken}&refresh_token=${refreshToken}`);
-    // return res.status(StatusCodes.OK).json({ status: "success", access_token: accessToken, refresh_token: refreshToken });
+    const isCliRequest = clientType === 'cli';
+    
+    if (isCliRequest) {
+        return res.redirect(`${config.CLI_URL}/callback?access_token=${accessToken}&refresh_token=${refreshToken}`);
+    }
+    
+    return res.status(StatusCodes.OK).json({ status: "success", access_token: accessToken, refresh_token: refreshToken });
 }
 
 const refresh = async (req, res) => {
