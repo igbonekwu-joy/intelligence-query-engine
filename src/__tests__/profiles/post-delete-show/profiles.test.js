@@ -17,7 +17,7 @@ jest.mock('../../../modules/profile/user-data.service.js', () => ({
     getAgeGroup: jest.fn().mockReturnValue('adult'),
 }));
 
-const { fetchGender, fetchAge, fetchCountryList, findUserByName, edgeCases } = require("../../../modules/profile/user-data.service");
+const { fetchGender, fetchAge, fetchCountryList, findUserByName } = require("../../../modules/profile/user-data.service");
 
 const token = jwt.sign(
     { id: uuidv7(), username: 'test_user', role: 'admin', is_active: true },
