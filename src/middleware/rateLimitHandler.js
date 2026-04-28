@@ -1,8 +1,40 @@
-const { default: rateLimit } = require("express-rate-limit");
+const rateLimit = require("express-rate-limit");
+const env = require("../config/env");
+const jwt = require("jsonwebtoken");
 
-module.exports = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes).
+const authRateLimit = rateLimit({
+    windowMs: 1 * 60 * 1000, 
+    max: 10, // 10 requests per minute
     legacyHeaders: false,
-    message: { status: 'error', message: 'Too many requests, please try again later.' }
+    standardHeaders: true,
+    statusCode: 429,
+    message: { status: 'error', message: 'Too Many Requests' }
 });
+
+const otherRateLimit = rateLimit({
+    windowMs: 1 * 60 * 1000, 
+    max: 60, // 60 requests per minute
+    legacyHeaders: false,
+    standardHeaders: true,
+    statusCode: 429,
+    message: { status: 'error', message: 'Too Many Requests' },
+
+    keyGenerator: (req) => {
+        try {
+            const authHeader = req.headers.authorization;
+            if (authHeader && authHeader.startsWith('Bearer ')) {
+                const token = authHeader.split(' ')[1];
+                const decoded = jwt.verify(token, env.JWT_SECRET);
+                return decoded.id; // user id
+            }
+        } catch {
+            // ignore errors and fallback to IP
+        }
+        return req.ip; 
+    }
+});
+
+module.exports = {
+    authRateLimit,
+    otherRateLimit
+}
