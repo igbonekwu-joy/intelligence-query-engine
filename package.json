@@ -9,6 +9,7 @@
     "seed": "node src/modules/profile/user-data.seed.js",
     "migrate": "node src/migrations/users.migration.js && node src/migrations/tokens.migration.js && node src/migrations/profiles.migration.js",
     "db:setup": "npm run migrate && npm run seed",
+    "make-admin": "node src/modules/auth/auth.seed.js",
     "lint": "eslint . --ext .js",
     "test": "jest --forceExit --detectOpenHandles",
     "test:watch": "jest --watchAll --verbose",
