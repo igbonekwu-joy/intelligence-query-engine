@@ -60,7 +60,7 @@ const gitHubCallback = async (req, res) => {
     const refreshToken = await generateRefreshToken(user.id);
     console.log(accessToken, refreshToken);
 
-    return res.redirect(`${config.CLI_URL}/auth/success?access_token=${accessToken}&refresh_token=${refreshToken}`);
+    return res.redirect(`${config.CLI_URL}/callback?access_token=${accessToken}&refresh_token=${refreshToken}`);
     // return res.status(StatusCodes.OK).json({ status: "success", access_token: accessToken, refresh_token: refreshToken });
 }
 
