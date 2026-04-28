@@ -3,7 +3,7 @@ const config = require("../config");
 const winston = require("winston");
 
 const pool = new Pool({
-    connectionString: (process.env.NODE_ENV == 'development' || process.env.NODE_ENV == 'test') ? config.POSTGRES_TEST_URI : config.POSTGRES_URI,
+    connectionString: process.env.NODE_ENV == 'development' ? config.POSTGRES_DEV_URI : (process.env.NODE_ENV == 'test' ? config.POSTGRES_TEST_URI : config.POSTGRES_URI)
 });
 
 pool.on("error", (err) => {
