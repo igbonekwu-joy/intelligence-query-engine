@@ -1,7 +1,7 @@
 const jwt = require("jsonwebtoken");
-const config = require("../config");
+const config = require("../config/env");
 const crypto = require("crypto");
-const pool = require("../startup/database");
+const pool = require("../config/database");
 const { uuidv7 } = require("uuidv7");
 
 const generateAccessToken = (user) => {
