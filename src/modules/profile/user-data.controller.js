@@ -245,7 +245,6 @@ const storeUserData = async (req, res) => {
     return res.status(StatusCodes.CREATED).json({ status: "success", data: user });
 }
 
-// PATCH /api/users/:id/role
 const updateUserRole = async (req, res, next) => {
     try {
         const { id } = req.params;
