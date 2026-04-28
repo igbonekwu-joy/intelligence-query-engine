@@ -63,12 +63,16 @@ const getOrCreateUser = async (profile, email) => {
 
     if (userResult.rows.length === 0) {
         const insertResult = await pool.query(
-            `INSERT INTO users (id, github_id, username, email, avatar_url, role)
-                VALUES ($1, $2, $3, $4, $5, 'analyst') RETURNING *`,
+            `INSERT INTO users (id, github_id, username, email, avatar_url, role, last_login_at)
+                VALUES ($1, $2, $3, $4, $5, 'analyst', NOW()) RETURNING *`,
             [uuidv7(), String(profile.id), profile.login, email, profile.avatar_url]
         );
         user = insertResult.rows[0];
     } else {
+        userResult = await pool.query(
+            `UPDATE users SET last_login_at = NOW() WHERE github_id = $1 RETURNING *`,
+            [String(profile.id)]
+        );
         user = userResult.rows[0];
     }
 
