@@ -1,8 +1,8 @@
 const request = require('supertest');
 const server = require('../../../app');
-const config = require('../../../config');
+const config = require('../../../config/env');
 const { uuidv7 } = require('uuidv7');
-const pool = require('../../../startup/database');
+const pool = require('../../../config/database');
 
 let token;
 let authHeaders;

@@ -1,6 +1,6 @@
 const request = require('supertest');
 const server = require('../app');
-const config = require('../config');
+const config = require('../config/env');
 const jwt = require('jsonwebtoken');
 
 describe('Authentication Middleware', () => {

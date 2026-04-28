@@ -1,6 +1,6 @@
 const winston = require("winston");
-const pool = require("../startup/database");
-require("../startup/logger")();
+const pool = require("../config/database");
+require("../config/logger")();
 
 const createUsersTable = async () => {
     try {
