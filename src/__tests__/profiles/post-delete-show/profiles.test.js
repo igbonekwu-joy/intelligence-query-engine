@@ -1,7 +1,7 @@
 const { uuidv7 } = require("uuidv7");
-const pool = require("../../../startup/database");
+const pool = require("../../../config/database");
 const jwt = require("jsonwebtoken");
-const config = require("../../../config");
+const config = require("../../../config/env");
 const server = require("../../../app");
 const request = require("supertest");
 

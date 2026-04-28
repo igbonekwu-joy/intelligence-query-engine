@@ -170,6 +170,17 @@ const exportProfiles = async (req, res) => {
     return res.status(StatusCodes.OK).send(csv);
 }
 
+const fetchUserData = async (req, res) => {
+    const id = req.params.id;
+    
+    const user = await pool.query(`SELECT * FROM profiles WHERE id = $1`, [id]);
+    if (user.rows.length === 0) {
+        return res.status(StatusCodes.NOT_FOUND).json({ status: "error", message: "User not found" });
+    }
+
+    return res.status(StatusCodes.OK).json({ status: "success", data: user.rows[0] });
+}
+
 const storeUserData = async (req, res) => {
     const name = req.body.name;
 
@@ -234,16 +245,40 @@ const storeUserData = async (req, res) => {
     return res.status(StatusCodes.CREATED).json({ status: "success", data: user });
 }
 
-const fetchUserData = async (req, res) => {
-    const id = req.params.id;
-    
-    const user = await pool.query(`SELECT * FROM profiles WHERE id = $1`, [id]);
-    if (user.rows.length === 0) {
-        return res.status(StatusCodes.NOT_FOUND).json({ status: "error", message: "User not found" });
-    }
+// PATCH /api/users/:id/role
+const updateUserRole = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const { role } = req.body;
 
-    return res.status(StatusCodes.OK).json({ status: "success", data: user.rows[0] });
-}
+        const validRoles = ['analyst', 'admin'];
+        if (!validRoles.includes(role)) {
+            return res.status(StatusCodes.BAD_REQUEST).json({
+                status: 'error',
+                message: `Invalid role. Valid roles are: ${validRoles.join(', ')}`
+            });
+        }
+
+        const result = await pool.query(
+            `UPDATE users SET role = $1 WHERE id = $2 RETURNING id, username, email, role`,
+            [role, id]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(StatusCodes.NOT_FOUND).json({
+                status: 'error',
+                message: 'User not found'
+            });
+        }
+
+        return res.status(StatusCodes.OK).json({
+            status: 'success',
+            data: result.rows[0]
+        });
+    } catch (err) {
+        next(err);
+    }
+};
 
 const deleteUserData = async (req, res) => {
     const id = req.params.id;
@@ -263,5 +298,6 @@ module.exports = {
     exportProfiles,
     storeUserData,
     fetchUserData,
-    deleteUserData
+    deleteUserData,
+    updateUserRole
 }

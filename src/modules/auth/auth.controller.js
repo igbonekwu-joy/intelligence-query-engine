@@ -40,9 +40,16 @@ const gitHubCallback = async (req, res) => {
     }
 
     const userProfile = await getGitHubUserProfile(githubAccessToken);
+    if (userProfile?.statusCode) {
+        return res.status(userProfile?.statusCode).json({ status: "error", message: userProfile?.message });
+    }
+
     let email = userProfile.email;
     if (!email) {
         email = await getGitHubUserEmail(githubAccessToken);
+        if (email?.statusCode) {
+            return res.status(email?.statusCode).json({ status: "error", message: email?.message });
+        }
     }
 
     const user = await getOrCreateUser(userProfile, email);
@@ -53,7 +60,7 @@ const gitHubCallback = async (req, res) => {
     const refreshToken = await generateRefreshToken(user.id);
     console.log(accessToken, refreshToken);
 
-    return res.redirect(`${config.CLI_URL}/auth/success?access_token=${accessToken}&refresh_token=${refreshToken}`);
+    return res.redirect(`${config.CLI_URL}/callback?access_token=${accessToken}&refresh_token=${refreshToken}`);
     // return res.status(StatusCodes.OK).json({ status: "success", access_token: accessToken, refresh_token: refreshToken });
 }
 

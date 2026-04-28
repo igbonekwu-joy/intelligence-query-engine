@@ -1,5 +1,5 @@
 const { Pool } = require("pg");
-const config = require("../../config");
+const config = require("../../config/env");
 
 module.exports = async () => {
     const pool = new Pool({
