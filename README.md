@@ -198,7 +198,7 @@ Users are assigned a role when they first log in via GitHub.
 | `GET /api/profiles/search` | GET | `analyst`, `admin` |
 | `GET /api/profiles/export` | GET | `analyst`, `admin` |
 | `POST /api/profiles` | POST | `admin` only |
-| `PATCH /api/profiles/:id` | PATCH | `admin` only | # To update user role. Or run `npm run make-admin username`
+| `PATCH /api/profiles/:id` | PATCH | `admin` only | () To update user role. Or run `npm run make-admin username`)
 | `DELETE /api/profiles/:id` | DELETE | `admin` only |
 
 ---

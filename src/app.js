@@ -27,7 +27,11 @@ app.use(session({
     secret: config.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false }
+    cookie: { 
+      httpOnly: true,  
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax'
+    }
 }));
 app.use(responseTimeHandler); // must be registered before routes to capture response times
 
