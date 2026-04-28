@@ -1,5 +1,5 @@
 const { StatusCodes } = require("http-status-codes");
-const config = require("../../config");
+const config = require("../../config/env");
 const { generateCodeVerifier, generateCodeChallenge } = require("../../utils/pkce");
 const { getGitHubAccessToken, getGitHubUserProfile, getGitHubUserEmail, getOrCreateUser, deleteRefreshToken } = require("./auth.service");
 const { generateAccessToken, generateRefreshToken, regenerateRefreshToken } = require("../../utils/tokens");
@@ -25,7 +25,6 @@ const gitHubOAuth = async (req, res) => {
 const gitHubCallback = async (req, res) => {
     const { code, state } = req.query;
     const verifier = req.session.codeVerifier;
-    console.log(code, verifier, state);
 
     if (state !== config.GITHUB_STATE_STRING) {
         return res.status(StatusCodes.BAD_REQUEST).json({ status: "error", message: "Invalid state parameter" });
@@ -36,8 +35,8 @@ const gitHubCallback = async (req, res) => {
     }
 
     const githubAccessToken = await getGitHubAccessToken({ code, verifier }); 
-    if (githubAccessToken.statusCode) {
-        return res.status(githubAccessToken.statusCode).json({ status: "error", message: githubAccessToken.message });
+    if (githubAccessToken?.statusCode) {
+        return res.status(githubAccessToken?.statusCode).json({ status: "error", message: githubAccessToken?.message });
     }
 
     const userProfile = await getGitHubUserProfile(githubAccessToken);
@@ -52,8 +51,9 @@ const gitHubCallback = async (req, res) => {
 
     const accessToken = generateAccessToken(user);
     const refreshToken = await generateRefreshToken(user.id);
+    console.log(accessToken, refreshToken);
 
-    return res.redirect(`${config.FRONTEND_URL}/auth/success?access_token=${accessToken}&refresh_token=${refreshToken}`);
+    return res.redirect(`${config.CLI_URL}/auth/success?access_token=${accessToken}&refresh_token=${refreshToken}`);
     // return res.status(StatusCodes.OK).json({ status: "success", access_token: accessToken, refresh_token: refreshToken });
 }
 

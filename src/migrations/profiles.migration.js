@@ -28,7 +28,7 @@ const createProfilesTable = async () => {
         winston.error("Error creating profiles table:", error);
     }
     finally {
-        await pool.end();
+        //await pool.end();
     }
 }
 

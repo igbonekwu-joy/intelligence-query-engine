@@ -1,5 +1,5 @@
 const { StatusCodes } = require("http-status-codes");
-const config = require("../config");
+const config = require("../config/env");
 const jwt = require("jsonwebtoken");
 
 const authenticate = (req, res, next) => {

@@ -24,7 +24,7 @@ const createUsersTable = async () => {
         winston.error("Error creating users table:", error);
     }
     finally {
-        await pool.end();
+        //await pool.end();
     }
 }
 

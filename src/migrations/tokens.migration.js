@@ -20,7 +20,7 @@ const createRefreshTokenTable = async () => {
         winston.error("Error creating refresh_tokens table:", error);
     }
     finally {
-        await pool.end();
+       // await pool.end();
     }
 }
 

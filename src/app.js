@@ -1,5 +1,5 @@
 const express = require('express');
-const config = require('./config');
+const config = require('./config/env');
 const errorHandler = require('./middleware/errorHandler');
 const cors = require('cors');
 const { default: helmet } = require('helmet');
@@ -30,8 +30,8 @@ app.use(session({
     cookie: { secure: false }
 }));
 
-require('./startup/routes')(app);
-require('./startup/logger')();
+require('./routes')(app);
+require('./config/logger')();
 
 app.use(errorHandler); //must be registered after routes
 app.use(responseTimeHandler);

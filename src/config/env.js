@@ -20,5 +20,5 @@ module.exports = {
     GITHUB_LOGIN_REDIRECT_URL: process.env.GITHUB_LOGIN_REDIRECT_URL,
     SESSION_SECRET: process.env.SESSION_SECRET,
     JWT_SECRET: process.env.JWT_SECRET,
-    FRONTEND_URL: process.env.FRONTEND_URL
+    CLI_URL: process.env.CLI_URL
 }
