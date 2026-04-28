@@ -29,12 +29,12 @@ app.use(session({
     saveUninitialized: false,
     cookie: { secure: false }
 }));
+app.use(responseTimeHandler); // must be registered before routes to capture response times
 
 require('./routes')(app);
 require('./config/logger')();
 
-app.use(errorHandler); //must be registered after routes
-app.use(responseTimeHandler);
+app.use(errorHandler); //has to be registered after routes
 
 app.use(timeout('10s')); // abort requests that take longer than 10 seconds
 app.use((req, res, next) => {
