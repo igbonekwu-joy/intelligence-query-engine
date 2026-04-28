@@ -23,9 +23,9 @@ beforeEach(async () => {
     };
 });
 
-afterAll(async () => {
-    await pool.end(); // close DB connection after all tests
-});
+// afterAll(async () => {
+//     await pool.end(); // close DB connection after all tests
+// });
 
 describe('Profiles API', () => {
     describe('GET /api/profiles', () => {
@@ -134,6 +134,23 @@ describe('Profiles API', () => {
     });
 
     describe('GET /api/profiles/export', () => {
+        let exportTestProfileId; // 👈 separate variable for export test
+
+        beforeAll(async () => {
+            const id = uuidv7();
+            exportTestProfileId = id;
+            await pool.query(
+                `INSERT INTO profiles (id, name, gender, gender_probability, sample_size, age, age_group, country_id, country_probability)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                 ON CONFLICT (name) DO NOTHING`,
+                [id, `export_test_${Date.now()}`, 'male', 0.99, 100, 25, 'adult', 'NG', 0.85]
+            );
+        });
+
+        afterAll(async () => {
+            await pool.query(`DELETE FROM profiles WHERE id = $1`, [exportTestProfileId]);
+        });
+
         it('should return a CSV file', async () => {
             const res = await request(server).get('/api/profiles/export?format=csv')
                 .set(authHeaders);

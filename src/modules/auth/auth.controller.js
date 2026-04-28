@@ -25,6 +25,7 @@ const gitHubOAuth = async (req, res) => {
 const gitHubCallback = async (req, res) => {
     const { code, state } = req.query;
     const verifier = req.session.codeVerifier;
+    console.log(code, verifier, state);
 
     if (state !== config.GITHUB_STATE_STRING) {
         return res.status(StatusCodes.BAD_REQUEST).json({ status: "error", message: "Invalid state parameter" });
@@ -52,7 +53,8 @@ const gitHubCallback = async (req, res) => {
     const accessToken = generateAccessToken(user);
     const refreshToken = await generateRefreshToken(user.id);
 
-    return res.status(StatusCodes.OK).json({ status: "success", access_token: accessToken, refresh_token: refreshToken });
+    return res.redirect(`${config.FRONTEND_URL}/auth/success?access_token=${accessToken}&refresh_token=${refreshToken}`);
+    // return res.status(StatusCodes.OK).json({ status: "success", access_token: accessToken, refresh_token: refreshToken });
 }
 
 const refresh = async (req, res) => {

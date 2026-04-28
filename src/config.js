@@ -8,6 +8,7 @@ module.exports = {
     AGIFY_API_URL: process.env.AGIFY_API_URL,
     NATIONALIZE_API_URL: process.env.NATIONALIZE_API_URL,
     POSTGRES_URI: process.env.POSTGRES_URI,
+    POSTGRES_DEV_URI: process.env.POSTGRES_DEV_URI,
     POSTGRES_TEST_URI: process.env.POSTGRES_TEST_URI,
     API_VERSION: process.env.API_VERSION,
     GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID,
@@ -18,5 +19,6 @@ module.exports = {
     GITHUB_USER_API_URL: process.env.GITHUB_USER_API_URL,
     GITHUB_LOGIN_REDIRECT_URL: process.env.GITHUB_LOGIN_REDIRECT_URL,
     SESSION_SECRET: process.env.SESSION_SECRET,
-    JWT_SECRET: process.env.JWT_SECRET
+    JWT_SECRET: process.env.JWT_SECRET,
+    FRONTEND_URL: process.env.FRONTEND_URL
 }

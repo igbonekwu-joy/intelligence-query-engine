@@ -61,9 +61,9 @@ afterEach(async () => {
     jest.clearAllMocks();
 });
 
-afterAll(async () => {
-    await pool.end();
-});
+// afterAll(async () => {
+//     await pool.end();
+// });
 
 describe('POST /api/profiles', () => {
     beforeEach(async () => {
