@@ -9,6 +9,7 @@ const responseTimeHandler = require('./middleware/responseTimeHandler');
 const session = require('express-session');
 const cookieParser = require('cookie-parser');
 const { attachCSRF } = require('./middleware/csrfHandler');
+const pgSession = require('connect-pg-simple')(session);
 
 const app = express();
 
@@ -27,13 +28,18 @@ app.use(compression());
 app.use(cookieParser());
 
 app.use(session({
+    store: new pgSession({
+        conString: process.env.DATABASE_URL,
+        tableName: 'session', // auto-created
+        createTableIfMissing: true,
+    }),
     secret: config.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     cookie: {
       secure: process.env.NODE_ENV === 'production', 
       httpOnly: true,
-      sameSite: "lax"
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     }
 }));
 app.use(attachCSRF);
