@@ -78,7 +78,7 @@ const gitHubCallback = async (req, res) => {
 const refresh = async (req, res) => {
     const refresh_token = req.body?.refresh_token || req.session.refreshToken;
     if (!refresh_token) {
-        return res.status(StatusCodes.BAD_REQUEST).json({ status: "error", message: "Missing refresh token" });
+        return res.status(StatusCodes.UNAUTHORIZED).json({ status: "error", message: "Missing refresh token" });
     }
 
     const result = await regenerateRefreshToken(refresh_token);
@@ -97,7 +97,7 @@ const getUser = async (req, res) => {
 }
 
 const logout = async (req, res) => {
-    const { refresh_token } = req.body;
+    const refresh_token = req.body?.refresh_token || req.session.refreshToken;
     if (!refresh_token) {
         return res.status(StatusCodes.BAD_REQUEST).json({ status: "error", message: "Missing refresh token" });
     }
