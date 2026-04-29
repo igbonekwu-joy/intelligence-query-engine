@@ -62,17 +62,21 @@ const gitHubCallback = async (req, res) => {
 
     const accessToken = generateAccessToken(user);
     const refreshToken = await generateRefreshToken(user.id);
-    const isCliRequest = clientType === 'cli';
     
-    if (isCliRequest) {
+    if (clientType === 'cli') {
         return res.redirect(`${config.CLI_URL}/callback?access_token=${accessToken}&refresh_token=${refreshToken}`);
+    }
+    else if (clientType === 'web') {
+        req.session.accessToken = accessToken; 
+        req.session.refreshToken = refreshToken; 
+        return res.redirect(`${config.WEB_URL}`);
     }
     
     return res.status(StatusCodes.OK).json({ status: "success", access_token: accessToken, refresh_token: refreshToken });
 }
 
 const refresh = async (req, res) => {
-    const { refresh_token } = req.body;
+    const refresh_token = req.body?.refresh_token || req.session.refreshToken;
     if (!refresh_token) {
         return res.status(StatusCodes.BAD_REQUEST).json({ status: "error", message: "Missing refresh token" });
     }
@@ -82,7 +86,14 @@ const refresh = async (req, res) => {
         return res.status(StatusCodes.UNAUTHORIZED).json({ status: "error", message: "Invalid or expired refresh token" });
     }
 
+    req.session.accessToken = result.accessToken;
+    req.session.refreshToken = result.refreshToken;
+
     return res.status(StatusCodes.OK).json({ status: "success", access_token: result.accessToken, refresh_token: result.refreshToken });
+}
+
+const getUser = async (req, res) => {
+    return res.status(StatusCodes.OK).json({ status: "success", user: req.user });
 }
 
 const logout = async (req, res) => {
@@ -103,5 +114,6 @@ module.exports = {
     gitHubOAuth,
     gitHubCallback,
     refresh,
+    getUser,
     logout
 }

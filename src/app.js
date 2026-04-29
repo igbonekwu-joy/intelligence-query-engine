@@ -12,9 +12,10 @@ const app = express();
 const PORT = config.PORT;
 
 app.use(cors({
-  origin: '*',
+  origin: process.env.WEB_URL || 'http://localhost:3000',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-api-version'],
+  credentials: true
 }));
 
 app.use(helmet({
