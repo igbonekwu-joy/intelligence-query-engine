@@ -4,8 +4,15 @@ const jwt = require("jsonwebtoken");
 
 const authenticate = (req, res, next) => {
     const header = req.headers.authorization;
+    let accessToken;
     if (!header || !header.startsWith('Bearer ')) {
-        return res.status(StatusCodes.UNAUTHORIZED).json({ status: "error", message: "Access token is required" });
+        accessToken = req.session.accessToken; 
+        if (!accessToken) {
+            return res.status(StatusCodes.UNAUTHORIZED).json({ 
+                status: "error", 
+                message: "Access token is required" 
+            });
+        }
     }
 
     const apiVersion = req.headers['x-api-version'];
@@ -13,7 +20,8 @@ const authenticate = (req, res, next) => {
         return res.status(StatusCodes.BAD_REQUEST).json({ status: "error", message: "API version header required" });
     }
 
-    const token = header.split(' ')[1];
+    let token;
+    header ?  token = header.split(' ')[1] : token = accessToken;
     try{
         const decoded = jwt.verify(token, config.JWT_SECRET);
         req.user = decoded;
