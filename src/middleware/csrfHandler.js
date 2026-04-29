@@ -11,6 +11,8 @@ const attachCSRF = (req, res, next) => {
         sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
     });
 
+    res.setHeader('X-CSRF-Token', req.session.csrfToken);
+
   next();
 }
 
