@@ -8,9 +8,9 @@ describe('Auth endpoints', () => {
         expect(res.headers.location).toContain('github.com');
     });
 
-    it('POST /auth/refresh should return 400 without token', async () => {
+    it('POST /auth/refresh should return 401 without token', async () => {
         const res = await request(server).post('/auth/refresh').send({});
-        expect(res.statusCode).toBe(400);
+        expect(res.statusCode).toBe(401);
         expect(res.body.status).toBe('error');
     });
 
