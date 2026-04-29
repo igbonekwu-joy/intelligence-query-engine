@@ -518,3 +518,9 @@ Supported countries include most of Africa, Europe, the Americas, Asia, and Ocea
 
 - Maximum of 50 results per page — large data exports are not supported through this API.
 - Country matching relies on the phrase being prefixed with `from`, `in`, `living in`, `based in`, or `of`. A bare country name like `"nigeria males"` (without a preposition) will not extract the country.
+
+
+## Related Repositories
+
+- 🔧 [CLI](https://github.com/igbonekwu-joy/intelligence-query-engine-cli)
+- 💻 [Web Portal](https://github.com/igbonekwu-joy/intelligence-query-engine-web-frontend-portal)
