@@ -8,7 +8,15 @@ const authRateLimit = rateLimit({
     legacyHeaders: false,
     standardHeaders: true,
     statusCode: 429,
-    message: { status: 'error', message: 'Too Many Requests' }
+    message: { status: 'error', message: 'Too Many Requests' },
+
+    keyGenerator: (req) => {
+        const realIp =
+            req.headers['x-forwarded-for']?.split(',')[0].trim() ||
+            req.headers['x-real-ip'] ||
+            req.ip;
+        return realIp;
+    }
 });
 
 const otherRateLimit = rateLimit({
