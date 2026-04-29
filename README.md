@@ -416,6 +416,140 @@ All errors follow this structure:
 
 ---
 
+## System Architecture
+The Intelligence Query Engine is made up of three independent repositories that work together:
+┌─────────────────────┐        ┌─────────────────────┐
+│                     │        │                     │
+│   Web Portal        │        │   CLI               │
+│   (React)           │        │   (Node.js)         │
+│                     │        │                     │
+└────────┬────────────┘        └──────────┬──────────┘
+         │                                │
+         │   HTTP + Bearer token          │   HTTP + Bearer token
+         │                                │
+         ▼                                ▼
+┌─────────────────────────────────────────────────────┐
+│                                                     │
+│              REST API (Express.js)                  │
+│                                                     │
+│  ┌─────────────┐  ┌────────────┐  ┌─────────────┐  │
+│  │ Auth Router │  │  Profiles  │  │   Search    │  │
+│  │             │  │  Router    │  │   Router    │  │
+│  └──────┬──────┘  └─────┬──────┘  └──────┬──────┘  │
+│         │               │                │          │
+│         └───────────────┼────────────────┘          │
+│                         │                           │
+│              ┌──────────▼──────────┐                │
+│              │   Middleware Layer  │                │
+│              │  (auth, rbac, log)  │                │
+│              └──────────┬──────────┘                │
+│                         │                           │
+│         ┌───────────────┼───────────────┐           │
+│         ▼               ▼               ▼           │
+│  ┌─────────────┐ ┌────────────┐ ┌─────────────┐    │
+│  │ PostgreSQL  │ │  GitHub    │ │  External   │    │
+│  │ (profiles,  │ │  OAuth API │ │  APIs       │    │
+│  │  users,     │ │            │ │ (gender,age,│    │
+│  │  tokens)    │ │            │ │  country)   │    │
+│  └─────────────┘ └────────────┘ └─────────────┘    │
+│                                                     │
+└─────────────────────────────────────────────────────┘
+
+---
+
+## Role Enforcement Logic
+Role enforcement is applied at the middleware layer on every protected route. Here is how it works end to end:
+Incoming Request
+      │
+      ▼
+┌─────────────────────┐
+│  authenticate()     │  Verifies the Bearer token in the Authorization header.
+│  middleware         │  Decodes the JWT, checks expiry, and attaches the user
+│                     │  payload (id, role) to req.user.
+└────────┬────────────┘
+         │ token valid
+         ▼
+┌─────────────────────┐
+│  authorize(roles)   │  Checks req.user.role against the list of roles allowed
+│  middleware         │  for that route. Returns 403 Forbidden if the role does
+│                     │  not match.
+└────────┬────────────┘
+         │ role allowed
+         ▼
+    Route Handler
+
+---
+
+## Middleware Usage
+Routes are protected by passing the required roles into the authorize middleware:
+```bash
+// Any authenticated user (analyst or admin)
+router.get('/api/profiles', authenticate, authorize(['analyst', 'admin']), getProfiles);
+```
+
+```bash
+// Admin only
+router.delete('/api/profiles/:id', authenticate, authorize(['admin']), deleteProfile);
+```
+
+## Role Assignment
+A user's role is assigned when they first authenticate via GitHub OAuth and a record is created in the users table. The default role is analyst. To promote a user to admin:
+
+```bash
+npm run make-admin <github_username>
+Or via the API (admin only):
+PATCH /api/profiles/:id
+```
+
+---
+
+## CLI Usage
+The CLI lets you query the Intelligence Query Engine API directly from your terminal without using the web portal.
+
+## Installation
+```bash
+git clone https://github.com/igbonekwu-joy/intelligence-query-engine-cli.git
+cd intelligence-query-engine-cli
+npm install
+```
+
+## Configuration
+
+```bash
+cp .env.example .env
+```
+
+Add your API base URL and access token to .env:
+```bash
+API_BASE_URL=http://localhost:5000
+ACCESS_TOKEN=your_access_token_here
+```
+## Commands
+bash# List profiles with optional filters
+insighta profiles
+
+# Filter by gender and country
+insighta profiles --gender male --country NG
+
+# Filter by age range
+insighta profiles --min-age 20 --max-age 35
+
+# Natural language search
+insighta search "young females from nigeria"
+
+# Get a single profile by ID
+insighta profile <id>
+
+# Export profiles to CSV
+insighta export --gender female --country GH
+
+# Show help
+insighta --help
+
+Note: Refer to the CLI repository for the full list of flags and options.
+
+---
+
 ## Natural Language Search
 
 ### How it works
