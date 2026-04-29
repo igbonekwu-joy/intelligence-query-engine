@@ -14,7 +14,7 @@ module.exports = function (app) {
     //app.use(rateLimitHandler);
 
     app.use('/auth', authRateLimit, authRoutes); 
-    app.get('/auth/me', authenticate, asyncHandler(getUser));  
 
     app.use('/api/profiles', otherRateLimit, authenticate, csrf, userData);
+    app.get('/api/users/me', otherRateLimit, authenticate, csrf, asyncHandler(getUser));  
 }
