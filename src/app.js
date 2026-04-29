@@ -32,6 +32,7 @@ app.use(helmet({
 app.use(compression()); 
 app.use(cookieParser());
 
+app.set('trust proxy', 1);
 app.use(session({
     store: new pgSession({
         pool: sessionPool,
