@@ -1,11 +1,11 @@
 const request = require('supertest');
-const server = require('../app');
 const config = require('../config/env');
 const jwt = require('jsonwebtoken');
+const app = require('../app');
 
 describe('Authentication Middleware', () => {
     it('should return 401 if no token is provided', async () => {
-        const res = await request(server).get('/api/profiles');
+        const res = await request(app).get('/api/profiles');
         expect(res.statusCode).toEqual(401);
         expect(res.body.status).toEqual('error');
         expect(res.body.message).toEqual('Access token is required');
@@ -17,7 +17,7 @@ describe('Authentication Middleware', () => {
            config.JWT_SECRET,
            { expiresIn: '0s' }
         );
-        const res = await request(server).get('/api/profiles')
+        const res = await request(app).get('/api/profiles')
             .set('Authorization', `Bearer ${token}`)
             .set('X-API-Version', '1');
         expect(res.statusCode).toEqual(401);
@@ -26,7 +26,7 @@ describe('Authentication Middleware', () => {
     });
 
     it('should return 400 if API version header is missing', async () => {
-        const res = await request(server).get('/api/profiles')
+        const res = await request(app).get('/api/profiles')
             .set('Authorization', 'Bearer access_token');
         expect(res.statusCode).toEqual(400);
         expect(res.body.status).toEqual('error');
@@ -40,7 +40,7 @@ describe('Authentication Middleware', () => {
            { expiresIn: '3m' }
         );
 
-        const res = await request(server).get('/api/profiles')
+        const res = await request(app).get('/api/profiles')
             .set('Authorization', `Bearer ${token}`)
             .set('X-API-Version', '1');
         expect(res.statusCode).toEqual(403);

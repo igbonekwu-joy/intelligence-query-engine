@@ -1,8 +1,8 @@
 const request = require('supertest');
-const server = require('../../../app');
 const config = require('../../../config/env');
 const { uuidv7 } = require('uuidv7');
 const pool = require('../../../config/database');
+const app = require('../../../app');
 
 let token;
 let authHeaders;
@@ -47,7 +47,7 @@ describe('Profiles API', () => {
         });
 
         it('should reject invalid query parameters', async () => {
-            const res = await request(server).get('/api/profiles?page=one&gender=sheorhe')
+            const res = await request(app).get('/api/profiles?page=one&gender=sheorhe')
                 .set(authHeaders);
 
             expect(res.statusCode).toEqual(400);
@@ -56,7 +56,7 @@ describe('Profiles API', () => {
         });
 
         it('should filter profiles based on query parameters', async () => {
-            const res = await request(server).get('/api/profiles?gender=female&country_id=US&age_group=adult&min_age=20&max_age=59&min_gender_probability=0.8&min_country_probability=0.5')
+            const res = await request(app).get('/api/profiles?gender=female&country_id=US&age_group=adult&min_age=20&max_age=59&min_gender_probability=0.8&min_country_probability=0.5')
                 .set(authHeaders);
 
             expect(res.statusCode).toEqual(200);
@@ -78,7 +78,7 @@ describe('Profiles API', () => {
         });
 
         it('should cap limit to 50', async () => {
-            const res = await request(server).get('/api/profiles?limit=100')
+            const res = await request(app).get('/api/profiles?limit=100')
                 .set(authHeaders);
 
             expect(res.statusCode).toEqual(200);
@@ -86,7 +86,7 @@ describe('Profiles API', () => {
         });
 
         it('should return 200 with a success status', async () => {
-            const res = await request(server).get('/api/profiles')
+            const res = await request(app).get('/api/profiles')
                 .set(authHeaders);
 
             expect(res.statusCode).toEqual(200);
@@ -100,7 +100,7 @@ describe('Profiles API', () => {
 
     describe('GET /api/profiles/search', () => {
         it('should return results for a valid query', async () => {
-            const res = await request(server).get('/api/profiles/search?q=males from nigeria')
+            const res = await request(app).get('/api/profiles/search?q=males from nigeria')
                 .set(authHeaders);
 
             expect([200, 404]).toContain(res.statusCode);
@@ -117,7 +117,7 @@ describe('Profiles API', () => {
         });
 
         it('should return 400 for missing q', async () => {
-            const res = await request(server).get('/api/profiles/search')
+            const res = await request(app).get('/api/profiles/search')
                 .set(authHeaders);
 
             expect(res.statusCode).toBe(400);
@@ -125,7 +125,7 @@ describe('Profiles API', () => {
         });
 
         it('should return 422 for uninterpretable query', async () => {
-            const res = await request(server).get('/api/profiles/search?q=shemales from mars')
+            const res = await request(app).get('/api/profiles/search?q=shemales from mars')
                 .set(authHeaders);
 
             expect(res.statusCode).toBe(422);
@@ -152,7 +152,7 @@ describe('Profiles API', () => {
         });
 
         it('should return a CSV file', async () => {
-            const res = await request(server).get('/api/profiles/export?format=csv')
+            const res = await request(app).get('/api/profiles/export?format=csv')
                 .set(authHeaders);
 
             expect(res.statusCode).toBe(200);
@@ -161,7 +161,7 @@ describe('Profiles API', () => {
         });
 
         it('should return 400 for missing format', async () => {
-            const res = await request(server).get('/api/profiles/export')
+            const res = await request(app).get('/api/profiles/export')
                 .set(authHeaders);
 
             expect(res.statusCode).toBe(400);
@@ -170,7 +170,7 @@ describe('Profiles API', () => {
         });
 
         it('should return 400 for unsupported format', async () => {
-            const res = await request(server).get('/api/profiles/export?format=json')
+            const res = await request(app).get('/api/profiles/export?format=json')
                 .set(authHeaders);
 
             expect(res.statusCode).toBe(400);

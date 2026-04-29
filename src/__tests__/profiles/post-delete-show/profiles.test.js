@@ -2,7 +2,6 @@ const { uuidv7 } = require("uuidv7");
 const pool = require("../../../config/database");
 const jwt = require("jsonwebtoken");
 const config = require("../../../config/env");
-const server = require("../../../app");
 const request = require("supertest");
 
 jest.setTimeout(15000);
@@ -18,6 +17,7 @@ jest.mock('../../../modules/profile/user-data.service.js', () => ({
 }));
 
 const { fetchGender, fetchAge, fetchCountryList, findUserByName } = require("../../../modules/profile/user-data.service");
+const app = require("../../../app");
 
 const token = jwt.sign(
     { id: uuidv7(), username: 'test_user', role: 'admin', is_active: true },
@@ -83,7 +83,7 @@ describe('POST /api/profiles', () => {
     });
 
     it('should return 401 if no token is provided', async () => {
-        const res = await request(server)
+        const res = await request(app)
             .post('/api/profiles')
             .set('X-API-Version', '1')
             .send({ name: 'jonathan' });
@@ -93,7 +93,7 @@ describe('POST /api/profiles', () => {
     });
 
     it('should create a new profile and return 201', async () => {
-        const res = await request(server)
+        const res = await request(app)
             .post('/api/profiles')
             .set(authHeaders)
             .send({ name: 'jonathan' });
@@ -112,7 +112,7 @@ describe('POST /api/profiles', () => {
         const existing = await insertTestProfile({ name: 'jonathan' });
         findUserByName.mockResolvedValue(existing);
 
-        const res = await request(server)
+        const res = await request(app)
             .post('/api/profiles')
             .set(authHeaders)
             .send({ name: 'jonathan' });
@@ -124,7 +124,7 @@ describe('POST /api/profiles', () => {
     });
 
     it('should return 400 if name is missing', async () => {
-        const res = await request(server)
+        const res = await request(app)
             .post('/api/profiles')
             .set(authHeaders)
             .send({});
@@ -134,7 +134,7 @@ describe('POST /api/profiles', () => {
     });
 
     it('should return 400 if name is empty string', async () => {
-        const res = await request(server)
+        const res = await request(app)
             .post('/api/profiles')
             .set(authHeaders)
             .send({ name: '' });
@@ -144,7 +144,7 @@ describe('POST /api/profiles', () => {
     });
 
     it('should return 422 if name is not a string', async () => {
-        const res = await request(server)
+        const res = await request(app)
             .post('/api/profiles')
             .set(authHeaders)
             .send({ name: 123 });
@@ -159,7 +159,7 @@ describe('POST /api/profiles', () => {
             message: 'Gender returned an invalid response'
         });
 
-        const res = await request(server)
+        const res = await request(app)
             .post('/api/profiles')
             .set(authHeaders)
             .send({ name: 'jonathan' });
@@ -175,7 +175,7 @@ describe('POST /api/profiles', () => {
             message: 'Agify returned an invalid response'
         });
 
-        const res = await request(server)
+        const res = await request(app)
             .post('/api/profiles')
             .set(authHeaders)
             .send({ name: 'jonathan' });
@@ -191,7 +191,7 @@ describe('POST /api/profiles', () => {
             message: 'Nationalize returned an invalid response'
         });
 
-        const res = await request(server)
+        const res = await request(app)
             .post('/api/profiles')
             .set(authHeaders)
             .send({ name: 'jonathan' });
@@ -206,7 +206,7 @@ describe('GET /api/profiles/:id', () => {
     it('should return a profile by id', async () => {
         const profile = await insertTestProfile();
 
-        const res = await request(server)
+        const res = await request(app)
             .get(`/api/profiles/${profile.id}`)
             .set(authHeaders);
 
@@ -222,7 +222,7 @@ describe('GET /api/profiles/:id', () => {
     it('should return 404 if profile not found', async () => {
         const nonExistentId = uuidv7();
 
-        const res = await request(server)
+        const res = await request(app)
             .get(`/api/profiles/${nonExistentId}`)
             .set(authHeaders);
 
@@ -234,7 +234,7 @@ describe('GET /api/profiles/:id', () => {
     it('should return 401 if no token is provided', async () => {
         const profile = await insertTestProfile();
 
-        const res = await request(server)
+        const res = await request(app)
             .get(`/api/profiles/${profile.id}`)
             .set('X-API-Version', '1');
 
@@ -248,7 +248,7 @@ describe('deleteUserData - DELETE /api/profiles/:id', () => {
     it('should delete a profile and return 204', async () => {
         const profile = await insertTestProfile();
 
-        const res = await request(server)
+        const res = await request(app)
             .delete(`/api/profiles/${profile.id}`)
             .set(authHeaders);
 
@@ -262,7 +262,7 @@ describe('deleteUserData - DELETE /api/profiles/:id', () => {
     it('should return 404 if profile to delete does not exist', async () => {
         const nonExistentId = uuidv7();
 
-        const res = await request(server)
+        const res = await request(app)
             .delete(`/api/profiles/${nonExistentId}`)
             .set(authHeaders);
 
@@ -274,7 +274,7 @@ describe('deleteUserData - DELETE /api/profiles/:id', () => {
     it('should return 401 if no token is provided', async () => {
         const profile = await insertTestProfile();
 
-        const res = await request(server)
+        const res = await request(app)
             .delete(`/api/profiles/${profile.id}`)
             .set('X-API-Version', '1');
 
