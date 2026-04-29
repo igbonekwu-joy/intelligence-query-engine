@@ -147,16 +147,16 @@ const exportProfiles = async (req, res) => {
     }
 
     const fields = [
-        { label: 'ID', value: 'id' },
-        { label: 'Name', value: 'name' },
-        { label: 'Gender', value: 'gender' },
-        { label: 'Gender Probability', value: 'gender_probability' },
-        { label: 'Age', value: 'age' },
-        { label: 'Age Group', value: 'age_group' },
-        { label: 'Country ID', value: 'country_id' },
-        { label: 'Country Name', value: 'country_name' },
-        { label: 'Country Probability', value: 'country_probability' },
-        { label: 'Created At', value: 'created_at' },
+        { label: 'id', value: 'id' },
+        { label: 'name', value: 'name' },
+        { label: 'gender', value: 'gender' },
+        { label: 'gender_probability', value: 'gender_probability' },
+        { label: 'age', value: 'age' },
+        { label: 'age_group', value: 'age_group' },
+        { label: 'country_id', value: 'country_id' },
+        { label: 'country_name', value: 'country_name' },
+        { label: 'country_probability', value: 'country_probability' },
+        { label: 'created_at', value: 'created_at' },
     ];
 
     const parser = new Parser({ fields });
