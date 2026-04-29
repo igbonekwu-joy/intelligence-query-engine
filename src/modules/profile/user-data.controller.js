@@ -223,16 +223,15 @@ const storeUserData = async (req, res) => {
 
     const result = await pool.query(
         `INSERT INTO profiles 
-            (id, name, gender, gender_probability, sample_size, age, age_group, country_id, country_probability) 
+            (id, name, gender, gender_probability, age, age_group, country_id, country_probability) 
         VALUES
-            ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-        RETURNING id, name, gender, gender_probability, sample_size, age, age_group, country_id, country_probability, created_at AT TIME ZONE 'UTC' AS created_at`,
+            ($1, $2, $3, $4, $5, $6, $7, $8)
+        RETURNING id, name, gender, gender_probability, age, age_group, country_id, country_probability, created_at AT TIME ZONE 'UTC' AS created_at`,
         [
             id, 
             name, 
             gender, 
-            gender_probability, 
-            sample_size,  
+            gender_probability,  
             age, 
             age_group, 
             topCountry.country_id, 

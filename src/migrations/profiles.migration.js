@@ -12,7 +12,6 @@ const createProfilesTable = async () => {
                 name VARCHAR(255) UNIQUE,
                 gender VARCHAR(255),
                 gender_probability FLOAT,
-                sample_size INT,
                 age INT,
                 age_group VARCHAR(255),
                 country_id VARCHAR(2),

@@ -7,7 +7,7 @@ const { generateAccessToken, generateRefreshToken, regenerateRefreshToken } = re
 const gitHubOAuth = async (req, res) => {
     const verifier = generateCodeVerifier();
     const challenge = generateCodeChallenge(verifier);
-    const clientType = req.query.client || 'web'; // capture client type from query params in case of CLI requests
+    const clientType = req.query.client; // capture client type from query params in case of CLI requests
 
     req.session.codeVerifier = verifier;
     req.session.clientType = clientType; 
@@ -27,7 +27,6 @@ const gitHubOAuth = async (req, res) => {
 const gitHubCallback = async (req, res) => {
     const { code, state } = req.query;
     const verifier = req.session.codeVerifier;
-    return res.json({code, verifier});
 
     if (state !== config.GITHUB_STATE_STRING) {
         return res.status(StatusCodes.BAD_REQUEST).json({ status: "error", message: "Invalid state parameter" });
@@ -58,7 +57,7 @@ const gitHubCallback = async (req, res) => {
     const user = await getOrCreateUser(userProfile, email);
 
     delete req.session.codeVerifier;
-    const clientType = req.session.clientType || 'web'; // retrieve stored client type
+    const clientType = req.session.clientType; // retrieve stored client type
     delete req.session.clientType;
 
     const accessToken = generateAccessToken(user);

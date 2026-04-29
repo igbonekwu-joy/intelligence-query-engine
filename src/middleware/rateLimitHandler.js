@@ -25,12 +25,12 @@ const otherRateLimit = rateLimit({
             if (authHeader && authHeader.startsWith('Bearer ')) {
                 const token = authHeader.split(' ')[1];
                 const decoded = jwt.verify(token, env.JWT_SECRET);
-                return decoded.id; // user id
+                return decoded.id;
             }
         } catch {
             // ignore errors and fallback to IP
         }
-        return req.ip; 
+        return rateLimit.ipKeyGenerator(req); // ← replaces req.ip
     }
 });
 
