@@ -11,7 +11,7 @@ const gitHubOAuth = async (req, res) => {
 
     req.session.codeVerifier = verifier;
     req.session.clientType = clientType; 
-
+ 
     const params = new URLSearchParams({
         client_id: config.GITHUB_CLIENT_ID,
         redirect_uri: config.GITHUB_REDIRECT_URI,
@@ -27,7 +27,7 @@ const gitHubOAuth = async (req, res) => {
 const gitHubCallback = async (req, res) => {
     const { code, state } = req.query;
     const verifier = req.session.codeVerifier;
-    return res.json({code, state});
+    return res.json({code, verifier});
 
     if (state !== config.GITHUB_STATE_STRING) {
         return res.status(StatusCodes.BAD_REQUEST).json({ status: "error", message: "Invalid state parameter" });
