@@ -5,7 +5,7 @@ const { authRateLimit, otherRateLimit} = require('./middleware/rateLimitHandler'
 const { authenticate } = require('./middleware/authenticationHandler');
 const { getUser } = require('./modules/auth/auth.controller');
 const asyncHandler = require('./middleware/asyncHandler');
-const { csrf, attachCSRF } = require('./middleware/csrfHandler');
+const { csrf } = require('./middleware/csrfHandler');
 
 module.exports = function (app) {
     app.use(express.json()); 

@@ -16,7 +16,7 @@ const PORT = config.PORT;
 app.use(cors({
   origin: process.env.WEB_URL || 'http://localhost:3000',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-api-version'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-api-version', 'X-CSRF-Token'],
   credentials: true
 }));
 
@@ -32,7 +32,7 @@ app.use(session({
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: false, 
+      secure: process.env.NODE_ENV === 'production', 
       httpOnly: true,
       sameSite: "lax"
     }
