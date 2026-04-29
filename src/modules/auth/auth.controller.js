@@ -11,7 +11,7 @@ const gitHubOAuth = async (req, res) => {
 
     req.session.codeVerifier = verifier;
     req.session.clientType = clientType; 
-
+ 
     const params = new URLSearchParams({
         client_id: config.GITHUB_CLIENT_ID,
         redirect_uri: config.GITHUB_REDIRECT_URI,
