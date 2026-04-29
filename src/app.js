@@ -11,7 +11,6 @@ const cookieParser = require('cookie-parser');
 const { attachCSRF } = require('./middleware/csrfHandler');
 
 const app = express();
-const PORT = config.PORT;
 
 app.use(cors({
   origin: process.env.WEB_URL || 'http://localhost:3000',
