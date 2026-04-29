@@ -35,8 +35,8 @@ describe('Profiles API', () => {
             const id = uuidv7();
             testProfileId = id;
             await pool.query(
-                `INSERT INTO profiles (id, name, gender, gender_probability, sample_size, age, age_group, country_id, country_probability)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                `INSERT INTO profiles (id, name, gender, gender_probability, age, age_group, country_id, country_probability)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
                  ON CONFLICT (name) DO NOTHING`,
                 [id, `filter_test_${Date.now()}`, 'female', 0.95, 100, 25, 'adult', 'US', 0.90]
             );
@@ -140,8 +140,8 @@ describe('Profiles API', () => {
             const id = uuidv7();
             exportTestProfileId = id;
             await pool.query(
-                `INSERT INTO profiles (id, name, gender, gender_probability, sample_size, age, age_group, country_id, country_probability)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                `INSERT INTO profiles (id, name, gender, gender_probability, age, age_group, country_id, country_probability)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
                  ON CONFLICT (name) DO NOTHING`,
                 [id, `export_test_${Date.now()}`, 'male', 0.99, 100, 25, 'adult', 'NG', 0.85]
             );

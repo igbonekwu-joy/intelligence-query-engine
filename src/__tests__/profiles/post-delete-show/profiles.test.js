@@ -38,7 +38,6 @@ const insertTestProfile = async (overrides = {}) => {
         name: 'testuser',
         gender: 'male',
         gender_probability: 0.99,
-        sample_size: 100,
         age: 30,
         age_group: 'adult',
         country_id: 'NG',
@@ -47,9 +46,9 @@ const insertTestProfile = async (overrides = {}) => {
     };
 
     await pool.query(
-        `INSERT INTO profiles (id, name, gender, gender_probability, sample_size, age, age_group, country_id, country_probability)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-        [profile.id, profile.name, profile.gender, profile.gender_probability, profile.sample_size, profile.age, profile.age_group, profile.country_id, profile.country_probability]
+        `INSERT INTO profiles (id, name, gender, gender_probability, age, age_group, country_id, country_probability)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [profile.id, profile.name, profile.gender, profile.gender_probability, profile.age, profile.age_group, profile.country_id, profile.country_probability]
     );
 
     return profile;
