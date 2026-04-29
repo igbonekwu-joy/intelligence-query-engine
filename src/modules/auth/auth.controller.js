@@ -27,7 +27,6 @@ const gitHubOAuth = async (req, res) => {
 const gitHubCallback = async (req, res) => {
     const { code, state } = req.query;
     const verifier = req.session.codeVerifier;
-    return res.json({ code, state, verifier });
 
     if (state !== config.GITHUB_STATE_STRING) {
         return res.status(StatusCodes.BAD_REQUEST).json({ status: "error", message: "Invalid state parameter" });
