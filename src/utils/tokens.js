@@ -58,8 +58,13 @@ const regenerateRefreshToken = async (oldToken) => {
     return { accessToken, refreshToken, user };
 }
 
+function generateCSRFToken() {
+  return crypto.randomBytes(32).toString("hex");
+}
+
 module.exports = {
     generateAccessToken,
     generateRefreshToken,
-    regenerateRefreshToken
+    regenerateRefreshToken,
+    generateCSRFToken
 }

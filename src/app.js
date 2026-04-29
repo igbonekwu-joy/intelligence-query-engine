@@ -7,6 +7,8 @@ const compression = require('compression');
 const timeout = require('connect-timeout');
 const responseTimeHandler = require('./middleware/responseTimeHandler');
 const session = require('express-session');
+const cookieParser = require('cookie-parser');
+const { attachCSRF } = require('./middleware/csrfHandler');
 
 const app = express();
 const PORT = config.PORT;
@@ -23,13 +25,20 @@ app.use(helmet({
 }));
 
 app.use(compression()); 
+app.use(cookieParser());
 
 app.use(session({
     secret: config.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false }
+    cookie: {
+      secure: false, 
+      httpOnly: true,
+      sameSite: "lax"
+    }
 }));
+app.use(attachCSRF);
+
 app.use(responseTimeHandler); // must be registered before routes to capture response times
 
 require('./routes')(app);
