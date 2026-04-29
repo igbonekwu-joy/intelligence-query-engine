@@ -45,6 +45,7 @@ app.use(session({
       secure: process.env.NODE_ENV === 'production', 
       httpOnly: true,
       sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      proxy: true,
     }
 }));
 app.use(attachCSRF);
