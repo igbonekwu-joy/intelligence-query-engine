@@ -8,7 +8,7 @@ const attachCSRF = (req, res, next) => {
     res.cookie('csrf_token', req.session.csrfToken, {
         httpOnly: false,        // so JS can read it
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
     });
 
   next();
