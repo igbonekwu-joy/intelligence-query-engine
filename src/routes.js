@@ -3,6 +3,8 @@ const userData = require('./modules/profile/user-data.routes');
 const authRoutes = require('./modules/auth/auth.routes');
 const { authRateLimit, otherRateLimit} = require('./middleware/rateLimitHandler');
 const { authenticate } = require('./middleware/authenticationHandler');
+const { getUser } = require('./modules/auth/auth.controller');
+const asyncHandler = require('./middleware/asyncHandler');
 
 module.exports = function (app) {
     app.use(express.json()); 
@@ -11,5 +13,7 @@ module.exports = function (app) {
     //app.use(rateLimitHandler);
 
     app.use('/auth', authRateLimit, authRoutes); 
+    app.get('/auth/me', authenticate, asyncHandler(getUser));  
+
     app.use('/api/profiles', otherRateLimit, authenticate, userData);
 }

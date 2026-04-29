@@ -245,38 +245,34 @@ const storeUserData = async (req, res) => {
     return res.status(StatusCodes.CREATED).json({ status: "success", data: user });
 }
 
-const updateUserRole = async (req, res, next) => {
-    try {
-        const { id } = req.params;
-        const { role } = req.body;
+const updateUserRole = async (req, res) => {
+    const { id } = req.params;
+    const { role } = req.body;
 
-        const validRoles = ['analyst', 'admin'];
-        if (!validRoles.includes(role)) {
-            return res.status(StatusCodes.BAD_REQUEST).json({
-                status: 'error',
-                message: `Invalid role. Valid roles are: ${validRoles.join(', ')}`
-            });
-        }
-
-        const result = await pool.query(
-            `UPDATE users SET role = $1 WHERE id = $2 RETURNING id, username, email, role`,
-            [role, id]
-        );
-
-        if (result.rows.length === 0) {
-            return res.status(StatusCodes.NOT_FOUND).json({
-                status: 'error',
-                message: 'User not found'
-            });
-        }
-
-        return res.status(StatusCodes.OK).json({
-            status: 'success',
-            data: result.rows[0]
+    const validRoles = ['analyst', 'admin'];
+    if (!validRoles.includes(role)) {
+        return res.status(StatusCodes.BAD_REQUEST).json({
+            status: 'error',
+            message: `Invalid role. Valid roles are: ${validRoles.join(', ')}`
         });
-    } catch (err) {
-        next(err);
     }
+
+    const result = await pool.query(
+        `UPDATE users SET role = $1 WHERE id = $2 RETURNING id, username, email, role`,
+        [role, id]
+    );
+
+    if (result.rows.length === 0) {
+        return res.status(StatusCodes.NOT_FOUND).json({
+            status: 'error',
+            message: 'User not found'
+        });
+    }
+
+    return res.status(StatusCodes.OK).json({
+        status: 'success',
+        data: result.rows[0]
+    });
 };
 
 const deleteUserData = async (req, res) => {
