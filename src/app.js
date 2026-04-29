@@ -9,7 +9,12 @@ const responseTimeHandler = require('./middleware/responseTimeHandler');
 const session = require('express-session');
 const cookieParser = require('cookie-parser');
 const { attachCSRF } = require('./middleware/csrfHandler');
+const { Pool } = require('pg');
 const pgSession = require('connect-pg-simple')(session);
+
+const sessionPool = new Pool({
+    connectionString: process.env.NODE_ENV == 'development' ? config.POSTGRES_DEV_URI : (process.env.NODE_ENV == 'test' ? config.POSTGRES_TEST_URI : config.POSTGRES_URI)
+});
 
 const app = express();
 
@@ -29,7 +34,7 @@ app.use(cookieParser());
 
 app.use(session({
     store: new pgSession({
-        conString: process.env.DATABASE_URL,
+        pool: sessionPool,
         tableName: 'session', // auto-created
         createTableIfMissing: true,
     }),
