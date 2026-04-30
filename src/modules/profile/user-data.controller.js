@@ -138,37 +138,61 @@ const search = async (req, res) => {
 const exportProfiles = async (req, res) => {
     const { error } = validateExportQueryParams.validate(req.query);
     if (error) {
-        return res.status(StatusCodes.BAD_REQUEST).json({ status: "error", message: "Invalid query parameters" });
+        return res.status(StatusCodes.BAD_REQUEST).json({ 
+            status: "error", 
+            message: "Invalid query parameters" 
+        });
     }
 
     const { rows: result, total } = await fetchProfiles(req, { paginate: false });
     if (total === 0) {
-        return res.status(StatusCodes.NOT_FOUND).json({ status: "error", message: "No profiles found" });
+        return res.status(StatusCodes.NOT_FOUND).json({ 
+            status: "error", 
+            message: "No profiles found" 
+        });
     }
 
+    // Explicitly define column order and headers to match spec exactly
     const fields = [
-        { label: 'id', value: 'id' },
-        { label: 'name', value: 'name' },
-        { label: 'gender', value: 'gender' },
-        { label: 'gender_probability', value: 'gender_probability' },
-        { label: 'age', value: 'age' },
-        { label: 'age_group', value: 'age_group' },
-        { label: 'country_id', value: 'country_id' },
-        { label: 'country_name', value: 'country_name' },
-        { label: 'country_probability', value: 'country_probability' },
-        { label: 'created_at', value: 'created_at' },
+        'id',
+        'name', 
+        'gender',
+        'gender_probability',
+        'age',
+        'age_group',
+        'country_id',
+        'country_name',
+        'country_probability',
+        'created_at',
     ];
 
-    const parser = new Parser({ fields });
-    const csv = parser.parse(result);
+    // Map result to only include spec fields in the correct order
+    const data = result.map(row => ({
+        id: row.id,
+        name: row.name,
+        gender: row.gender,
+        gender_probability: row.gender_probability,
+        age: row.age,
+        age_group: row.age_group,
+        country_id: row.country_id,
+        country_name: row.country_name,
+        country_probability: row.country_probability,
+        created_at: row.created_at,
+    }));
 
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const parser = new Parser({ 
+        fields,
+        delimiter: ',',  
+    });
+    
+    const csv = parser.parse(data);
+    const timestamp = Date.now(); 
 
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', `attachment; filename="profiles_${timestamp}.csv"`);
 
-    return res.status(StatusCodes.OK).send(csv);
-}
+    return res.status(StatusCodes.OK).send(Buffer.from(csv));
+};
 
 const fetchUserData = async (req, res) => {
     const id = req.params.id;
