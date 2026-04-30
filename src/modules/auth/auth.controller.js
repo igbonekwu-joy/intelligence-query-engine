@@ -3,6 +3,7 @@ const config = require("../../config/env");
 const { generateCodeVerifier, generateCodeChallenge } = require("../../utils/pkce");
 const { getGitHubAccessToken, getGitHubUserProfile, getGitHubUserEmail, getOrCreateUser, deleteRefreshToken } = require("./auth.service");
 const { generateAccessToken, generateRefreshToken, regenerateRefreshToken } = require("../../utils/tokens");
+const pool = require("../../config/database");
 
 const gitHubOAuth = async (req, res) => {
     const verifier = generateCodeVerifier();
@@ -93,8 +94,38 @@ const refresh = async (req, res) => {
 }
 
 const getUser = async (req, res) => {
-    return res.status(StatusCodes.OK).json({ status: "success", user: req.user });
-}
+  try {
+    const result = await pool.query(
+      'SELECT id, username, role, github_id, is_active FROM users WHERE id = $1',
+      [req.user.id]
+    );
+
+    if (!result.rows[0]) {
+      return res.status(StatusCodes.NOT_FOUND).json({ 
+        status: 'error', 
+        message: 'User not found' 
+      });
+    }
+
+    const user = result.rows[0];
+
+    return res.status(StatusCodes.OK).json({ 
+      status: 'success', 
+      data: {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        github_id: user.github_id,
+        is_active: user.is_active,
+      }
+    });
+  } catch  {
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ 
+      status: 'error', 
+      message: 'Failed to fetch user' 
+    });
+  }
+};
 
 const logout = async (req, res) => {
     const refresh_token = req.body?.refresh_token || req.session.refreshToken;
