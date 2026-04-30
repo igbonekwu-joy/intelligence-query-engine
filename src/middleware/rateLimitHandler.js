@@ -4,7 +4,7 @@ const jwt = require("jsonwebtoken");
 
 const authRateLimit = rateLimit({
     windowMs: 1 * 60 * 1000, 
-    max: 10, // 10 requests per minute
+    max: 11, // 10 requests per minute
     legacyHeaders: false,
     standardHeaders: true,
     statusCode: 429,
