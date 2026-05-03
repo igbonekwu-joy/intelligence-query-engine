@@ -129,6 +129,7 @@ const getUser = async (req, res) => {
 
 const logout = async (req, res) => {
     const refresh_token = req.body?.refresh_token || req.session.refreshToken;
+    req.session.destroy();
     if (!refresh_token) {
         return res.status(StatusCodes.BAD_REQUEST).json({ status: "error", message: "Missing refresh token" });
     }
