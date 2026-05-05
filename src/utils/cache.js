@@ -6,6 +6,11 @@ let client = null;
 const getClient = async () => {
     if (client && client.isOpen) return client;
 
+    if (client && !client.isOpen) {
+        try { await client.quit(); } catch (_) {}
+        client = null;
+    }
+
     //create redis client
     client = redis.createClient({
         url: process.env.REDIS_DB_URL || 'redis://localhost:6379',
@@ -74,5 +79,12 @@ const cacheFlushPattern = async (pattern) => {
         winston.warn('Cache flush failed:', err.message);
     }
 };
+
+process.on('SIGINT', async () => {
+    if (client && client.isOpen) {
+        await client.quit();
+    }
+    process.exit(0);
+});
 
 module.exports = { cacheGet, cacheSet, cacheDel, cacheFlushPattern };
