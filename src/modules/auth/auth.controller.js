@@ -135,6 +135,7 @@ const logout = async (req, res) => {
     }
 
     const result = await deleteRefreshToken(refresh_token);
+    req.session.destroy();
     if (!result) {
         return res.status(StatusCodes.UNAUTHORIZED).json({ status: "error", message: "Invalid refresh token" });
     }

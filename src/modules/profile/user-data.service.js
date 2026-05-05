@@ -3,7 +3,10 @@ const config = require("../../config/env");
 const { StatusCodes } = require("http-status-codes");
 const winston = require("winston");
 const pool = require("../../config/database");
+const { normalizeFilters } = require("../../utils/queryNormalizer");
+const { cacheGet, cacheSet } = require("../../utils/cache");
 
+const CACHE_TTL = 300;
 const axiosGetInstance = createAxiosInstance(
   '/'
 ); 
@@ -157,7 +160,19 @@ const paginate = (pageQuery, limitQuery, shouldPaginate) => {
 
 const fetchProfiles = async (req, options = {}) => {
   const shouldPaginate = options.paginate;
-  const { gender, country_id, age_group, min_age, max_age, min_gender_probability, min_country_probability, sort_by, order, page, limit } = req.query;
+
+  const { normalized, cacheKey } = normalizeFilters(req.query);
+
+  // Check cache first
+  const cached = await cacheGet(cacheKey);
+  if (cached) {
+    winston.info(`Cache HIT: ${cacheKey}`);
+    return cached;
+  }
+
+  winston.info(`Cache MISS: ${cacheKey}`);
+
+  const { gender, country_id, age_group, min_age, max_age, min_gender_probability, min_country_probability, sort_by, order, page, limit } = normalized;
 
   const { whereClause, values } = filter(gender, country_id, age_group, min_age, max_age, min_gender_probability, min_country_probability);
 
@@ -181,8 +196,13 @@ const fetchProfiles = async (req, options = {}) => {
   ]);
 
   const total = parseInt(countResult.rows[0].count, 10);
+
+  const queryResult = { page: pageEntered, limit: limitEntered, total, rows: result.rows };
+
+  // Store in cache for next time
+  await cacheSet(cacheKey, queryResult, CACHE_TTL);
   
-  return { page: pageEntered, limit: limitEntered, total, rows: result.rows };
+  return queryResult;
 }
 
 module.exports = { 

@@ -4,6 +4,13 @@ const jwt = require("jsonwebtoken");
 const config = require("../../../config/env");
 const request = require("supertest");
 
+jest.mock('../../../utils/cache.js', () => ({
+    cacheGet: jest.fn().mockResolvedValue(null),
+    cacheSet: jest.fn(),
+    cacheDel: jest.fn(),
+    cacheFlushPattern: jest.fn(),
+}));
+
 jest.setTimeout(15000);
 
 //for external api

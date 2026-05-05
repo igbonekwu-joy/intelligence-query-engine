@@ -2,7 +2,14 @@ const rateLimit = require("express-rate-limit");
 const env = require("../config/env");
 const jwt = require("jsonwebtoken");
 
-const authRateLimit = rateLimit({
+const createRateLimit = (options) => {
+    if (process.env.NODE_ENV === 'test') {
+        return (req, res, next) => next(); // bypass rate limiting in tests
+    }
+    return rateLimit(options);
+};
+
+const authRateLimit = createRateLimit({
     windowMs: 1 * 60 * 1000, 
     max: 11, // 10 requests per minute
     legacyHeaders: false,
@@ -11,11 +18,12 @@ const authRateLimit = rateLimit({
     message: { status: 'error', message: 'Too Many Requests' },
 
     keyGenerator: (req) => {
-        const realIp =
+        const ip =
             req.headers['x-forwarded-for']?.split(',')[0].trim() ||
             req.headers['x-real-ip'] ||
             req.ip;
-        return realIp;
+
+        return rateLimit.ipKeyGenerator(ip); 
     }
 });
 
