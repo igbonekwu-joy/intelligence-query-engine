@@ -5,6 +5,11 @@ const { uuidv7 } = require("uuidv7");
 const pool = require("../../config/database");
 const { parseNaturalQuery } = require("../../utils/queryParser");
 const { Parser } = require("json2csv");
+const { normalizeSearchFilters } = require("../../utils/queryNormalizer");
+const { cacheGet, cacheSet, cacheFlushPattern, cacheDel } = require("../../utils/cache");
+const winston = require("winston");
+
+const CACHE_TTL = 300;
 
 const index = async (req, res) => {
     const { error } = validateQueryParams.validate(req.query);
@@ -38,7 +43,6 @@ const index = async (req, res) => {
     });
 } 
 
-
 const search = async (req, res) => {
     const { q, page: pageQuery, limit: limitQuery } = req.query;
 
@@ -61,6 +65,17 @@ const search = async (req, res) => {
     const page = Math.max(1, parseInt(pageQuery) || 1);
     const limit = Math.min(50, Math.max(1, parseInt(limitQuery) || 10));
     const offset = (page - 1) * limit;
+
+    // query normalization
+    const { cacheKey } = normalizeSearchFilters(filters, page, limit);
+    const searchCacheKey = `search:${encodeURIComponent(q.toLowerCase().trim())}:${cacheKey}`;
+
+    // Check cache first
+    const cached = await cacheGet(searchCacheKey);
+    if (cached) {
+        winston.info(`Cache HIT: ${searchCacheKey}`);
+        return res.status(StatusCodes.OK).json(cached);
+    }
 
     // build parameterized query
     let conditions = [];
@@ -119,20 +134,20 @@ const search = async (req, res) => {
     const next = page * limit < totalItems ? `${req.baseUrl + req.path}?q=${encodeURIComponent(q)}&page=${page + 1}&limit=${limit}` : null;
     const prev = page > 1 ? `${req.baseUrl + req.path}?q=${encodeURIComponent(q)}&page=${page - 1}&limit=${limit}` : null;
 
-    return res.status(StatusCodes.OK).json({
+    const response = {
         status: 'success',
         page,
         limit,
         total: totalItems,
         total_pages,
-        links: {
-            self,
-            next,
-            prev
-        },
+        links: { self, next, prev },
         data: result.rows
-    });
+    };
 
+    // Cache the result
+    await cacheSet(searchCacheKey, response, CACHE_TTL);
+
+    return res.status(StatusCodes.OK).json(response);
 }
 
 const exportProfiles = async (req, res) => {
@@ -196,13 +211,26 @@ const exportProfiles = async (req, res) => {
 
 const fetchUserData = async (req, res) => {
     const id = req.params.id;
+    const cacheKey = `profile:${id}`;
+
+    // Check cache first
+    const cached = await cacheGet(cacheKey);
+    if (cached) {
+        winston.info(`Cache HIT: ${cacheKey}`);
+        return res.status(StatusCodes.OK).json(cached);
+    }
     
     const user = await pool.query(`SELECT * FROM profiles WHERE id = $1`, [id]);
     if (user.rows.length === 0) {
         return res.status(StatusCodes.NOT_FOUND).json({ status: "error", message: "User not found" });
     }
 
-    return res.status(StatusCodes.OK).json({ status: "success", data: user.rows[0] });
+    const response = { status: "success", data: user.rows[0] };
+
+    // Cache the individual profile
+    await cacheSet(cacheKey, response, 300);
+
+    return res.status(StatusCodes.OK).json(response);
 }
 
 const storeUserData = async (req, res) => {
@@ -265,6 +293,10 @@ const storeUserData = async (req, res) => {
 
     const user = result.rows[0];
 
+    // invalidate cache. new data will be cached on the next request
+    await cacheFlushPattern('profiles:*');
+    await cacheFlushPattern('search:*');
+
     return res.status(StatusCodes.CREATED).json({ status: "success", data: user });
 }
 
@@ -306,6 +338,11 @@ const deleteUserData = async (req, res) => {
     if (user.rows.length === 0) {
         return res.status(StatusCodes.NOT_FOUND).json({ status: "error", message: "User not found" });
     }
+
+    // Invalidate cache — deleted profile cannot appear in cached results
+    await cacheFlushPattern('profiles:*');
+    await cacheFlushPattern('search:*');
+    await cacheDel(`profile:${id}`);
 
     return res.status(StatusCodes.NO_CONTENT).json({  });
 }

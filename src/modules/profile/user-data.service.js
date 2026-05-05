@@ -161,9 +161,9 @@ const paginate = (pageQuery, limitQuery, shouldPaginate) => {
 const fetchProfiles = async (req, options = {}) => {
   const shouldPaginate = options.paginate;
 
-   const { normalized, cacheKey } = normalizeFilters(req.query);
+  const { normalized, cacheKey } = normalizeFilters(req.query);
 
-  // Step 2: Check cache first
+  // Check cache first
   const cached = await cacheGet(cacheKey);
   if (cached) {
     winston.info(`Cache HIT: ${cacheKey}`);

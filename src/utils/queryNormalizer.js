@@ -116,8 +116,7 @@ const normalizeSearchFilters = (parsedFilters, page = 1, limit = 10) => {
         ...parsedFilters,
         page,
         limit,
-        // search results default to created_at desc
-        sort_by: 'created_at',
+        sort_by: 'created_at', // default to created_at
         order: 'desc'
     });
 };
