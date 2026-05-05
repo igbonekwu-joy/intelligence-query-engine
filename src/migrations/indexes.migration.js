@@ -1,9 +1,6 @@
-const { Pool } = require('pg');
-const config = require('../config/env');
+const pool = require('../config/database');
 const winston = require('winston');
 require("../config/logger")();
-
-const pool = new Pool({ connectionString: process.env.NODE_ENV == 'development' ? config.POSTGRES_DEV_URI : (process.env.NODE_ENV == 'test' ? config.POSTGRES_TEST_URI : config.POSTGRES_URI) });
 
 const createIndexes = async () => {
     winston.info('Creating indexes...');
