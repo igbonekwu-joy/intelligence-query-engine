@@ -13,10 +13,6 @@ const VALID_GENDERS = ['male', 'female'];
 const VALID_AGE_GROUPS = ['child', 'teenager', 'adult', 'senior'];
 const REQUIRED_FIELDS = ['name', 'gender', 'age', 'country_id'];
 
-// Expected CSV columns (order doesn't matter — we use headers)
-// name, gender, gender_probability, age, age_group,
-// country_id, country_name, country_probability, 
-
 /**
  * Validate a single row. Returns { valid: bool, reason: string|null }
  */
