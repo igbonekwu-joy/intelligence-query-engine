@@ -37,6 +37,11 @@ Added the following indexes:
 All indexes use `CONCURRENTLY` so they are built without locking the table
 and do not block read queries during creation.
 
+To create indexes, run 
+```bash
+npm run create-index
+```
+
 **2. Redis query result cache** (`src/utils/cache.js`)
 
 Query results are cached for 5 minutes using a deterministic cache key.
