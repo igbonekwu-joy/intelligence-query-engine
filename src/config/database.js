@@ -5,7 +5,7 @@ const winston = require("winston");
 const pool = new Pool({
     connectionString: process.env.NODE_ENV == 'development' ? config.POSTGRES_DEV_URI : (process.env.NODE_ENV == 'test' ? config.POSTGRES_TEST_URI : config.POSTGRES_URI),
 
-    // Pool sizing
+    // Pool sizing. It maintains 10 reusable connections
     max: parseInt(process.env.DB_POOL_MAX) || 10,
  
     // How long to wait for a connection from the pool before erroring

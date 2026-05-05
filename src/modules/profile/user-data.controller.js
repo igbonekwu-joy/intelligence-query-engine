@@ -292,11 +292,6 @@ const storeUserData = async (req, res) => {
     );
 
     const user = result.rows[0];
-
-    // invalidate cache. new data will be cached on the next request
-    await cacheFlushPattern('profiles:*');
-    await cacheFlushPattern('search:*');
-
     return res.status(StatusCodes.CREATED).json({ status: "success", data: user });
 }
 
