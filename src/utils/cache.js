@@ -23,7 +23,7 @@ const getClient = async () => {
     });
 
     client.on('error', (err) => {
-        winston.error('Redis error:', err.message);
+        winston.error('Redis error: ', err.message);
     });
 
     client.on('connect', () => {

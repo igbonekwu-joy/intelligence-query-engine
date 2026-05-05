@@ -40,7 +40,7 @@ and do not block read queries during creation.
 **2. Redis query result cache** (`src/utils/cache.js`)
 
 Query results are cached for 5 minutes using a deterministic cache key.
-A cache hit returns in ~10–300ms. The cache falls through gracefully on
+A cache hit returns in ~10–30ms. The cache falls through gracefully on
 Redis failure — queries still work, just slower.
 
 **3. Optimized connection pool** (`src/config/database.js`)
@@ -69,10 +69,10 @@ of sequentially. Saves the full round-trip time of the count query.
 *Cache times are Redis GET latency only.*
 
 ### Trade-offs
-- Indexes use disk space and slow down batch writes slightly. Acceptable
-  since writes are batch-only, not continuous.
+- Indexes use disk space and slow down batch writes slightly. Acceptable since writes are batch-only, not continuous.
 - Cache results can be 5 minutes stale. Acceptable for this workload.
-  Cache is invalidated after every CSV ingestion.
+Cache is invalidated after every CSV ingestion.
+- A read replica was included in the architecture design as a future scaling option. At current scale, Redis caching absorbs the majority of read traffic, making a replica unnecessary. It would be added if cache miss volume grows to the point where the primary database becomes a bottleneck.
 
 ---
 
@@ -216,6 +216,11 @@ A bad row is always skipped individually — it never fails the entire upload.
   already exists from the original schema.
 - Disk storage for temp files requires the system temp dir to have enough
   space for at least one 500MB file per concurrent upload.
+- Ingestion of 500,000 rows takes approximately 1–3 minutes depending on 
+  server and database performance. This is expected and acceptable because bulk 
+  ingestion is not subject to the P50/P95 latency targets, which apply to 
+  read queries only. Also, ingestion runs asynchronously and does not 
+  block concurrent read traffic during processing.
 
 ---
 
