@@ -1,21 +1,4 @@
-// Handles CSV uploads of up to 500,000 rows.
-//
-// Key design decisions:
-// 1. STREAMING — file is never fully loaded into memory. It is piped
-//    through a CSV parser row by row.
-// 2. CHUNKING — rows are collected into batches of 500 and inserted
-//    using a single multi-row INSERT per batch. This is 100x faster
-//    than one INSERT per row.
-// 3. NON-BLOCKING — multer stores the file on disk (not memory),
-//    so the upload doesn't consume API memory while queries are running.
-// 4. NO ROLLBACK — if processing fails midway, already-inserted rows
-//    stay. Each chunk is its own transaction.
-// 5. CONCURRENT SAFE — each upload runs independently. Multiple uploads
-//    can run at the same time without interfering.
-
 const fs = require('fs');
-const path = require('path');
-const { Transform } = require('stream');
 const { parse } = require('csv-parse');
 const { uuidv7 } = require('uuidv7');
 const { StatusCodes } = require('http-status-codes');
