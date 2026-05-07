@@ -1,5 +1,3 @@
-// Stores uploaded CSV to disk (not memory) so large files don't consume API memory
-
 const multer = require('multer');
 const path = require('path');
 const os = require('os');

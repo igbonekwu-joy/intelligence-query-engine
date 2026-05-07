@@ -7,46 +7,35 @@ const pool = require('../../config/database');
 const { cacheFlushPattern } = require('../../utils/cache');
 const { getAgeGroup } = require('../profile/user-data.service');
 
-const CHUNK_SIZE = 500; // rows per INSERT batch
+const CHUNK_SIZE = 1000;       // rows per INSERT batch (increased from 500)
+const PARALLEL_CHUNKS = 5;     // how many chunks to insert simultaneously
 
 const VALID_GENDERS = ['male', 'female'];
 const VALID_AGE_GROUPS = ['child', 'teenager', 'adult', 'senior'];
 const REQUIRED_FIELDS = ['name', 'gender', 'age', 'country_id'];
 
-// Expected CSV columns (order doesn't matter — we use headers)
-// name, gender, gender_probability, age, age_group,
-// country_id, country_name, country_probability, 
-
-/**
- * Validate a single row. Returns { valid: bool, reason: string|null }
- */
 const validateRow = (row) => {
-    // Check required fields exist and are non-empty
     for (const field of REQUIRED_FIELDS) {
         if (!row[field] || String(row[field]).trim() === '') {
             return { valid: false, reason: 'missing_fields' };
         }
     }
 
-    // Validate gender
     const gender = String(row.gender).toLowerCase().trim();
     if (!VALID_GENDERS.includes(gender)) {
         return { valid: false, reason: 'invalid_gender' };
     }
 
-    // Validate age — must be a positive integer
     const age = parseInt(row.age, 10);
     if (isNaN(age) || age < 0 || age > 150) {
         return { valid: false, reason: 'invalid_age' };
     }
 
-    // Validate country_id — must be a 2-letter code
     const countryId = String(row.country_id).toUpperCase().trim();
     if (!/^[A-Z]{2}$/.test(countryId)) {
         return { valid: false, reason: 'invalid_country' };
     }
 
-    // Validate probabilities if present
     if (row.gender_probability !== undefined && row.gender_probability !== '') {
         const gp = parseFloat(row.gender_probability);
         if (isNaN(gp) || gp < 0 || gp > 1) {
@@ -61,7 +50,6 @@ const validateRow = (row) => {
         }
     }
 
-    // Validate age_group if present
     if (row.age_group && row.age_group.trim() !== '') {
         const ag = String(row.age_group).toLowerCase().trim();
         if (!VALID_AGE_GROUPS.includes(ag)) {
@@ -72,15 +60,9 @@ const validateRow = (row) => {
     return { valid: true, reason: null };
 };
 
-/**
- * Insert a chunk of validated rows using a single multi-row INSERT.
- * Uses ON CONFLICT (name) DO NOTHING for duplicate handling.
- * Returns { inserted, duplicates }
- */
 const insertChunk = async (rows) => {
     if (rows.length === 0) return { inserted: 0, duplicates: 0 };
 
-    // Build: INSERT INTO profiles (col1, col2, ...) VALUES ($1,$2,...), ($n,$n+1,...) ...
     const columns = [
         'id', 'name', 'gender', 'gender_probability',
         'age', 'age_group', 'country_id', 'country_name', 'country_probability'
@@ -112,8 +94,6 @@ const insertChunk = async (rows) => {
     `;
 
     const result = await pool.query(query, values);
-
-    // rowCount = actually inserted rows (duplicates are silently skipped)
     const inserted = result.rowCount;
     const duplicates = rows.length - inserted;
 
@@ -121,8 +101,29 @@ const insertChunk = async (rows) => {
 };
 
 /**
- * Main ingestion controller
+ * Insert multiple chunks in parallel using Promise.all()
+ * Returns combined { inserted, duplicates, errors }
  */
+const insertChunksInParallel = async (chunks) => {
+    const results = await Promise.all(
+        chunks.map(chunk =>
+            insertChunk(chunk).catch(err => {
+                winston.error('Chunk insert failed:', err.message);
+                return { inserted: 0, duplicates: 0, errors: chunk.length };
+            })
+        )
+    );
+
+    return results.reduce(
+        (acc, r) => ({
+            inserted: acc.inserted + (r.inserted || 0),
+            duplicates: acc.duplicates + (r.duplicates || 0),
+            errors: acc.errors + (r.errors || 0),
+        }),
+        { inserted: 0, duplicates: 0, errors: 0 }
+    );
+};
+
 const uploadCSV = async (req, res, next) => {
     if (!req.file) {
         return res.status(StatusCodes.BAD_REQUEST).json({
@@ -133,7 +134,6 @@ const uploadCSV = async (req, res, next) => {
 
     const filePath = req.file.path;
 
-    // Stats tracked throughout the stream
     const stats = {
         total_rows: 0,
         inserted: 0,
@@ -141,89 +141,94 @@ const uploadCSV = async (req, res, next) => {
         reasons: {}
     };
 
-    const trackSkip = (reason) => {
-        stats.skipped++;
-        stats.reasons[reason] = (stats.reasons[reason] || 0) + 1;
+    const trackSkip = (reason, count = 1) => {
+        stats.skipped += count;
+        stats.reasons[reason] = (stats.reasons[reason] || 0) + count;
     };
 
-    let chunk = [];
+    // Buffer: collect PARALLEL_CHUNKS worth of chunks before flushing
+    let currentChunk = [];
+    let pendingChunks = []; // holds multiple chunks waiting to be parallel-inserted
 
-    const processChunk = async () => {
-        try {
-            const { inserted, duplicates } = await insertChunk(chunk);
-            stats.inserted += inserted;
-            // Count duplicates as skipped with reason duplicate_name
-            for (let i = 0; i < duplicates; i++) trackSkip('duplicate_name');
-        } catch (err) {
-            winston.error('Chunk insert failed:', err.message);
-            // Count all rows in this chunk as skipped
-            for (let i = 0; i < chunk.length; i++) trackSkip('insert_error');
-        }
-        chunk = [];
+    const flushPendingChunks = async () => {
+        if (pendingChunks.length === 0) return;
+
+        const chunksToInsert = [...pendingChunks];
+        pendingChunks = [];
+
+        const { inserted, duplicates, errors } = await insertChunksInParallel(chunksToInsert);
+        stats.inserted += inserted;
+        if (duplicates > 0) trackSkip('duplicate_name', duplicates);
+        if (errors > 0) trackSkip('insert_error', errors);
     };
 
     try {
         await new Promise((resolve, reject) => {
-            const fileStream = fs.createReadStream(filePath); // create a readable stream
+            const fileStream = fs.createReadStream(filePath);
 
             const parser = parse({
-                columns: true,        // use first row as header. each row comes out as {name: val, ...} and not [val, val, ...]
+                columns: true,
                 skip_empty_lines: true,
                 trim: true,
-                relax_column_count: true, // don't crash on wrong column count
-                bom: true,            // handle UTF-8 BOM
+                relax_column_count: true,
+                bom: true,
             });
 
-            // Process each parsed row
             parser.on('readable', async () => {
                 let row;
                 while ((row = parser.read()) !== null) {
                     stats.total_rows++;
 
-                    // Validate the row
                     const { valid, reason } = validateRow(row);
                     if (!valid) {
                         trackSkip(reason);
                         continue;
                     }
 
-                    chunk.push(row);
+                    currentChunk.push(row);
 
-                    // When chunk is full, insert it
-                    if (chunk.length >= CHUNK_SIZE) {
-                        parser.pause(); // backpressure. stops reading while inserting
-                        await processChunk();
-                        parser.resume();
+                    // When current chunk is full, move it to pending
+                    if (currentChunk.length >= CHUNK_SIZE) {
+                        pendingChunks.push([...currentChunk]);
+                        currentChunk = [];
+
+                        // When we have enough parallel chunks, flush them all at once
+                        if (pendingChunks.length >= PARALLEL_CHUNKS) {
+                            parser.pause();
+                            await flushPendingChunks();
+                            parser.resume();
+                        }
                     }
                 }
             });
 
             parser.on('error', (err) => {
                 winston.error('CSV parse error:', err.message);
-                // Don't reject — parsing errors on individual rows are handled above
-                // Only reject on catastrophic stream failure
                 if (err.code === 'CSV_INVALID_CLOSING_QUOTE') {
                     trackSkip('malformed_row');
                 }
             });
 
             parser.on('end', async () => {
-                // Process any remaining rows in the last partial chunk
-                if (chunk.length > 0) {
-                    await processChunk();
+                // Push any remaining rows as a final partial chunk
+                if (currentChunk.length > 0) {
+                    pendingChunks.push([...currentChunk]);
+                    currentChunk = [];
                 }
+
+                // Flush any remaining pending chunks
+                await flushPendingChunks();
+
                 resolve();
             });
 
             fileStream.on('error', reject);
-            fileStream.pipe(parser); // connects the readable stream to the parser
+            fileStream.pipe(parser);
         });
 
-        // Clean up the temp file
         fs.unlink(filePath, () => {});
-
-        // Invalidate cache — new data was inserted
         await cacheFlushPattern('profiles:*');
+        await cacheFlushPattern('search:*');
 
         return res.status(StatusCodes.OK).json({
             status: 'success',
@@ -234,7 +239,6 @@ const uploadCSV = async (req, res, next) => {
         });
 
     } catch (err) {
-        // Clean up temp file on error
         fs.unlink(filePath, () => {});
         winston.error('CSV ingestion failed:', err.message);
         next(err);
